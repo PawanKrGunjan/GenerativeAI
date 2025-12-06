@@ -1,0 +1,6 @@
+sentence-transformers
+faiss-cpu
+numpy
+pypdf
+llama-cpp-python
+tqdm

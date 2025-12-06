@@ -26,10 +26,9 @@ test.py
 RAG APP
 __pycache__
 venv
-*.txt
 *.pkl
 *.bin
-
+*.pdf
 logs
 models
-*.pdf
+

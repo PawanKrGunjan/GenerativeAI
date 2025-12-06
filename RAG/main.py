@@ -45,15 +45,14 @@ def main():
     
     # Example queries
     queries = [
-        "Where is RAG?",
+        "What is an LLM?",
+        "What is a diffusion model?",
+        "Explain the different Stages in RAG",
         "What’s the best small LLM for CPU-only RAG under 8 GB RAM?",
         "What is chunking",
         "What is the best chunk size and overlap for PDFs?",
-        "What is hallucination?",
-        "My RAG is hallucinating even with context. How do I fix it?",
+        "What are hallucinations in LLMs?",
         "Which embedding model should I use in 2025?",
-        "How do I evaluate my RAG system properly?",
-        "How do I update the knowledge base without rebuilding the entire index?",
     ]
     
     # Process queries
