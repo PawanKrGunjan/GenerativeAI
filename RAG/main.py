@@ -48,11 +48,9 @@ def main():
         "What is an LLM?",
         "What is a diffusion model?",
         "Explain the different Stages in RAG",
-        "What’s the best small LLM for CPU-only RAG under 8 GB RAM?",
         "What is chunking",
-        "What is the best chunk size and overlap for PDFs?",
         "What are hallucinations in LLMs?",
-        "Which embedding model should I use in 2025?",
+        "What is embedding?",
     ]
     
     # Process queries
