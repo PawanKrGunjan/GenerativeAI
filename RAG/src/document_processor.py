@@ -58,7 +58,7 @@ class DocumentProcessor:
         
         if ext == '.pdf':
             return self.load_pdf(filepath)
-        elif ext in ['.txt', '.md']:
+        elif ext in ['.txt', '.md', '.Md']:
             return self.load_text(filepath)
         else:
             raise ValueError(f"Unsupported file type: {ext}")
