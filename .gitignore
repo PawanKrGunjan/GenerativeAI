@@ -24,3 +24,12 @@ TestResults.xml
 .env
 test.py
 RAG APP
+__pycache__
+venv
+*.txt
+*.pkl
+*.bin
+
+logs
+models
+*.pdf
