@@ -1,92 +1,135 @@
-let microphone = document.getElementById('microphone');
-let statusDiv = document.getElementById('status');
-let responseAudio = document.getElementById('response-audio');
-let userText = document.getElementById('userText');
-let responseText = document.getElementById('responseText');
+document.addEventListener('DOMContentLoaded', function() {
+    const micBtn = document.getElementById('microphone');
+    const userText = document.getElementById('userText');
+    const responseText = document.getElementById('responseText');
+    const responseAudio = document.getElementById('response-audio');
+    const statusDiv = document.getElementById('status');
+    
+    let mediaRecorder;
+    let audioChunks = [];
+    let isRecording = false;
 
-let mediaRecorder;
-let audioChunks = [];
-let isRecording = false;
-
-microphone.addEventListener('click', () => {
-    if (!isRecording) {
-        startRecording();
-    } else {
-        stopRecording();
+    // Health check interval
+    async function checkHealth() {
+        try {
+            const res = await fetch('/health');
+            const data = await res.json();
+            const status = data.model_loaded ? '✅ READY' : '⏳ LOADING...';
+            statusDiv.textContent = `Model Status: ${status}`;
+            statusDiv.className = data.model_loaded ? 'ready' : 'loading';
+        } catch(e) {
+            statusDiv.textContent = '❌ Server Error';
+            statusDiv.className = 'error';
+        }
     }
-    isRecording = !isRecording;
-});
+    checkHealth();
+    setInterval(checkHealth, 3000);
 
-function startRecording() {
-    statusDiv.textContent = "Recording...";
-    audioChunks = [];
+    // Recording
+    micBtn.addEventListener('click', async () => {
+        if (isRecording) {
+            stopRecording();
+            return;
+        }
 
-    navigator.mediaDevices.getUserMedia({ audio: true })
-        .then(stream => {
-            mediaRecorder = new MediaRecorder(stream);
+        if (!navigator.mediaDevices?.getUserMedia) {
+            alert('Microphone not supported');
+            return;
+        }
+
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ 
+                audio: {
+                    sampleRate: 16000,
+                    channelCount: 1
+                } 
+            });
+            mediaRecorder = new MediaRecorder(stream, {
+                mimeType: 'audio/webm;codecs=opus'
+            });
+            
+            audioChunks = [];
+            mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+            mediaRecorder.onstop = processRecording;
+            
             mediaRecorder.start();
+            isRecording = true;
+            micBtn.classList.add('recording');
+            userText.textContent = '🎙️ Recording... (click to stop)';
+            
+        } catch(err) {
+            alert('Microphone access denied');
+            console.error(err);
+        }
+    });
 
-            mediaRecorder.addEventListener('dataavailable', event => {
-                audioChunks.push(event.data);
+    function stopRecording() {
+        if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+            mediaRecorder.stop();
+        }
+        if (mediaRecorder?.stream) {
+            mediaRecorder.stream.getTracks().forEach(track => track.stop());
+        }
+        isRecording = false;
+        micBtn.classList.remove('recording');
+        userText.textContent = 'Processing...';
+    }
+
+    async function processRecording() {
+        const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+        userText.textContent = '⏳ Transcribing...';
+
+        const formData = new FormData();
+        formData.append('file', audioBlob, 'recording.webm');
+
+        try {
+            // Upload audio
+            const uploadRes = await fetch('/process_audio', {
+                method: 'POST',
+                body: formData
             });
+            const uploadData = await uploadRes.json();
+            const text = uploadData.text;
+            
+            if (!text || text.includes('No speech')) {
+                userText.textContent = '❌ No speech detected';
+                return;
+            }
+            
+            userText.textContent = `"${text}"`;
+            responseText.textContent = '⏳ Thinking...';
 
-            mediaRecorder.addEventListener('stop', () => {
-                let audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
-                let formData = new FormData();
-                formData.append('audio_data', audioBlob);
-
-                fetch('/process_audio', {
-                    method: 'POST',
-                    body: formData
-                })
-                .then(response => response.json())
-                .then(data => {
-                    let text = data.text;
-                    userText.textContent = text;
-                    statusDiv.textContent = "Generating response...";
-
-                    return fetch('/get_response', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({ text: text })
-                    });
-                })
-                .then(response => response.json())
-                .then(data => {
-                    let responseTextContent = data.response_text;
-                    responseText.textContent = responseTextContent;
-                    statusDiv.textContent = "Response received.";
-
-                    return fetch(`/get_audio/${encodeURIComponent(responseTextContent)}`);
-                })
-                .then(response => {
-                    if (response.ok) {
-                        return response.blob();
-                    } else {
-                        throw new Error('Network response was not ok');
-                    }
-                })
-                .then(blob => {
-                    let audioUrl = URL.createObjectURL(blob);
-                    responseAudio.src = audioUrl;
-                    responseAudio.style.display = 'block';
-                    responseAudio.play();
-                })
-                .catch(error => {
-                    statusDiv.textContent = "Error occurred.";
-                });
+            // Get LLM response
+            const llmRes = await fetch('/get_response', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ text })
             });
+            const llmData = await llmRes.json();
+            const response_text = llmData.response_text;
+            responseText.textContent = `"${response_text}"`;
 
-            statusDiv.textContent = "Recording...";
-        })
-        .catch(error => {
-            statusDiv.textContent = "Error accessing microphone.";
-        });
-}
+            // Generate speech
+            const ttsRes = await fetch('/synthesize_speech', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ text: response_text })
+            });
+            const ttsData = await ttsRes.json();
+            const audio_filename = ttsData.audio_filename;
 
-function stopRecording() {
-    statusDiv.textContent = "Recording stopped.";
-    mediaRecorder.stop();
-}
+            // Play audio
+            responseAudio.src = `/audio/${audio_filename}`;
+            responseAudio.load();
+            
+            responseAudio.play().catch(err => {
+                console.log('Autoplay blocked:', err);
+                responseText.textContent += ' (Click play button)';
+            });
+            
+        } catch(err) {
+            userText.textContent = '❌ Error occurred';
+            console.error('Error:', err);
+        }
+    }
+});

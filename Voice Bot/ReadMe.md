@@ -1,208 +1,162 @@
 # Gunjan Voice Assistant
 
-A local, offline voice assistant powered by **Gemma-2-2B** (LlamaCpp), **Whisper** for speech-to-text, and **gTTS** for text-to-speech. Features conversational memory, wake-word detection ("stop"), and a FastAPI web interface.
+A **fully offline** voice assistant powered by **Qwen2.5-3B-Instruct-Q4_K_M** (GGUF), **Whisper** transcription, **gTTS** speech synthesis, and **FastAPI** web interface. **Single-turn responses** like Alexa with clean logging and background model loading.
 
 ## ✨ Features
 
-- **Fully Offline LLM**: Gemma-2-2B-IT Q4_K_M (2.6GB GGUF model)
-- **Whisper Transcription**: Accurate speech-to-text with `openai/whisper-base.en`
-- **Audio Classification**: Detect "stop" command using MIT AST model
-- **Conversational Memory**: LangChain `ConversationBufferMemory`
-- **Web Interface**: FastAPI server on `http://localhost:8000`
-- **Jupyter/IPython Support**: Inline audio playback
-- **Clean Logging**: Structured logs with rotation
+- **Fully Offline LLM**: Gemma-2-2B-IT Q4_K_M (~1.4GB GGUF)
+- **Whisper STT**: `openai/whisper-base.en` for accurate transcription
+- **gTTS TTS**: Google Text-to-Speech → MP3 playback
+- **FastAPI Web UI**: `http://localhost:8000` with real-time health checks
+- **Background Loading**: Instant server startup, model loads async
+- **Structured Logging**: File rotation + terminal output
+- **Single-Turn Mode**: Clean Alexa-style responses (no conversation memory)
 
 ## 🛠️ Quick Start
 
-### 1. Clone & Setup
+### 1. Setup Environment
 ```bash
-git clone <your-repo>
-cd voice-assistant
+cd VoiceBot
 python -m venv venv
 source venv/bin/activate  # Linux/Mac
-# venv\Scripts\activate    # Windows
 pip install -r requirements.txt
 ```
 
-### 2. Download Model
+### 2. Download Model (~1.4GB)
 ```bash
 mkdir -p models
-# Download Gemma-2-2B-IT Q4_K_M.gguf (~2.6GB)
 wget -O models/gemma-2-2b-it-Q4_K_M.gguf \
   "https://huggingface.co/bartowski/gemma-2-2b-it-GGUF/resolve/main/gemma-2-2b-it-Q4_K_M.gguf"
 ```
 
-### 3. Fix Audio Dependencies (Ubuntu/Debian)
+### 3. Audio Dependencies (Ubuntu)
 ```bash
-sudo apt update
-sudo apt install python3-dev portaudio19-dev build-essential alsa-utils
+sudo apt update && sudo apt install -y portaudio19-dev ffmpeg
 pip install pyaudio
 ```
 
-### 4. Run Standalone
-```bash
-python Voice_assistent.py
-```
-*Say something → Hear response → Say "STOP" to exit*
-
-### 5. Run Web Server
+### 4. Run Server
 ```bash
 python server.py
 ```
-*Visit `http://localhost:8000`*
+**Open:** `http://localhost:8000`  
+**Wait:** Model loads in background (~1-2 min)  
+**Status:** Check `/health` endpoint
 
 ## 📁 Project Structure
-
 ```
-├── Voice_assistent.py      # Core voice chatbot class
-├── server.py              # FastAPI web server
-├── logger_config.py       # Structured logging
-├── models/                # GGUF model files
-├── uploads/              # Temporary audio files
-├── logs/                 # Rotated log files
-├── templates/            # HTML templates
-├── static/               # CSS/JS assets
-└── requirements.txt      # Dependencies
+├── server.py              # FastAPI server + background model loading
+├── Voice_assistent.py     # VoiceChatbot class (Whisper + Gemma + gTTS)
+├── logger_config.py       # Structured logging (file + terminal)
+├── templates/index.html   # Web UI
+├── static/css/styles.css  # Responsive UI
+├── static/js/script.js    # MediaRecorder + API calls
+├── models/                # GGUF model (~1.4GB)
+├── uploads/               # Temp audio files (auto-cleaned)
+└── logs/                  # Rotated logs (Voicebot.log.*)
 ```
 
 ## 🚀 API Endpoints
 
-| Method | Endpoint              | Description |
-|--------|-----------------------|-------------|
-| `GET`  | `/`                  | Web UI |
-| `POST` | `/process_audio`     | Upload audio → Get transcription |
-| `POST` | `/get_response`      | Text → LLM response |
-| `POST` | `/synthesize_speech` | Text → MP3 filename |
-| `GET`  | `/audio/{filename}`  | Serve generated speech |
+| Method | Endpoint              | Description                  |
+|--------|----------------------|------------------------------|
+| `GET`  | `/`                  | Web UI                      |
+| `GET`  | `/health`            | Model status (`model_loaded`) |
+| `POST` | `/process_audio`     | Audio file → transcription  |
+| `POST` | `/get_response`      | Text → single-turn LLM      |
+| `POST` | `/synthesize_speech` | Text → MP3 filename         |
+| `GET`  | `/audio/{filename}`  | Serve TTS MP3               |
 
-## 🔧 Dependencies
-
+## 📦 Requirements
 ```txt
+fastapi
+uvicorn[standard]
+python-multipart
+jinja2
+pydantic
 torch
-SpeechRecognition
-gTTS
-playsound
-langchain-core
-langchain-groq
-langchain-community
-ipython
 transformers
-datasets
-pydub
-tf-keras
-soundfile
-sentencepiece
+langchain-community
 llama-cpp-python
-librosa
-pygame
+speechrecognition
+pydub
+gtts
+python-dotenv
 ```
 
-## ⚙️ Configuration
+**Install:** `pip install -r requirements.txt`
 
-| Env Var | Default | Purpose |
-|---------|---------|---------|
-| `CUDA_VISIBLE_DEVICES` | `""` | Force CPU (MX250 workaround) |
-| `LANGCHAIN_TRACING_V2` | `"false"` | Disable LangSmith |
-| `TF_CPP_MIN_LOG_LEVEL` | `"2"` | Quiet TensorFlow |
-
-## 🎵 Audio Pipeline
+## 🎵 Workflow
 
 ```
-Microphone → speech_recognition → WAV file
-    ↓
-Whisper (transcriber) → Text
-    ↓
-Gemma-2-2B (LLM) → Response text
-    ↓
-gTTS → MP3 → pydub playback
+🎙️ Record (WebM) → WAV conversion → Whisper STT
+         ↓
+     "Hello Gunjan" → Gemma-2-2B → "Okay I'm doing great!"
+         ↓
+     gTTS → MP3 → Browser playback
 ```
 
-## 🔇 Suppress Noisy Warnings
+## ⚙️ Logging
 
-✅ **ALSA/JACK**: Suppressed via `stderr` redirect  
-✅ **TensorFlow CPU**: `TF_CPP_MIN_LOG_LEVEL=2`  
-✅ **PyTorch CUDA**: Forced CPU-only  
-✅ **LangChain**: Tracing disabled  
-
-## 🖥️ Web Interface Workflow
-
-1. **Record** → POST `/process_audio` → Get text
-2. **Query LLM** → POST `/get_response` → Get response
-3. **Generate Speech** → POST `/synthesize_speech` → Get MP3 filename
-4. **Play** → GET `/audio/filename.mp3`
-
-## 💻 Development
-
-```bash
-# Auto-reload server
-uvicorn server:app --host 0.0.0.0 --port 8000 --reload
-
-# Logs in logs/voicebot.log.*
-tail -f logs/voicebot.log
+**Terminal + File** (`logs/Voicebot.log`):
+```
+21:34:56,123 server.py [MainThread] - INFO  :  89 - ✅ Audio saved: user_audio_xyz.webm
+21:34:57,456 server.py [MainThread] - INFO  : 102 - ✅ Transcribed: 'hello gunjan'
+21:34:58,789 server.py [MainThread] - INFO  : 145 - Gunjan: Okay I'm doing great thanks!
 ```
 
-## 📱 Frontend Example (JavaScript)
+**Monitor:** `tail -f logs/Voicebot.log`
 
-```javascript
-// Record → Transcribe → LLM → TTS → Play
-async function processVoice() {
-    const audioBlob = await recordAudio();
-    const formData = new FormData();
-    formData.append('file', audioBlob, 'audio.wav');
-    
-    // 1. Transcribe
-    const { text } = await fetch('/process_audio', { method: 'POST', body: formData }).then(r => r.json());
-    
-    // 2. LLM Response
-    const { response_text } = await fetch('/get_response', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text })
-    }).then(r => r.json());
-    
-    // 3. Speech
-    const { audio_filename } = await fetch('/synthesize_speech', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: response_text })
-    }).then(r => r.json());
-    
-    // 4. Play
-    const audio = new Audio(`/audio/${audio_filename}`);
-    audio.play();
-}
-```
-
-## 🐛 Troubleshooting
+## 🔧 Troubleshooting
 
 | Issue | Solution |
 |-------|----------|
-| **PyAudio build fails** | `sudo apt install portaudio19-dev python3-dev` |
-| **ALSA warnings** | Already suppressed |
-| **Model not found** | Check `models/gemma-2-2b-it-Q4_K_M.gguf` |
-| **CUDA warnings** | MX250 unsupported → CPU fallback |
-| **Port 8000 busy** | `sudo ss -tulpn \| grep :8000` + `kill <PID>` |
+| `422 Unprocessable Entity` | `pip install python-multipart` |
+| `No speech detected` | Check WAV conversion in `/process_audio` |
+| `Model still loading` | Wait 1-2 min, check `/health` |
+| Uvicorn spam | Add `logging.getLogger("uvicorn").setLevel(logging.WARNING)` |
+| PyAudio fails | `sudo apt install portaudio19-dev` |
 
-## 📈 Performance
+## 📱 Web UI Features
 
-- **Cold Start**: ~30s (model loading)
-- **Transcription**: ~2-5s (Whisper base)
-- **LLM Response**: ~3-8s (Gemma-2 2B, 4096 ctx)
-- **TTS**: ~1-2s
-- **RAM**: ~4-6GB peak
+- **Responsive design** (mobile + desktop)
+- **Real-time health** (`/health` polling)
+- **MediaRecorder API** (WebM → Whisper)
+- **Visual feedback** (recording pulse, status colors)
+- **Error handling** (network, autoplay, transcription)
 
-## 🤝 Contributing
+## 🚀 Production
 
-1. Fork & PR
-2. Add tests in `tests/`
-3. Update `requirements.txt` for new deps
+```bash
+# No reload for model stability
+uvicorn server:app --host 0.0.0.0 --port 8000 --reload=False --log-level warning
+```
 
+## 💻 Development Commands
 
-## 📄 License
+```bash
+# Clean logs
+python -c "from logger_config import delete_old_logs; delete_old_logs('logs')"
 
-MIT License - See [LICENSE](LICENSE) file.
+# Test endpoints
+curl -X POST -F "file=@test.wav" http://localhost:8000/process_audio
+
+# Health check
+curl http://localhost:8000/health
+```
+
+## 📈 Performance (CPU)
+
+- **Server startup**: <1s (model loads async)
+- **Model load**: 30-120s (Gemma-2-2B Q4_K_M)
+- **STT**: 2-5s (Whisper base)
+- **LLM**: 3-8s (single-turn, 100 tokens)
+- **TTS**: 1-2s
+- **RAM**: 4-6GB peak
+
+## 🤝 License
+MIT License
 
 ***
 
-**Built with ❤️ for offline voice AI**  
-*Gunjan - Your local voice companion* 🚀
+**Gunjan - Your offline voice companion** 🎙️🚀
