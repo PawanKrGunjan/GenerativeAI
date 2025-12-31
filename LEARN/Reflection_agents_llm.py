@@ -1,181 +1,226 @@
 from typing import Annotated, TypedDict, List, Literal
 from langgraph.graph import StateGraph, END
+from langgraph.graph.message import add_messages
 from langchain_core.messages import HumanMessage, AIMessage, BaseMessage
 from langchain_ollama import ChatOllama
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 import re
+import datetime
+import logging
+
+
+# =============================================================================
+# PYTHON STANDARD LOGGER - CLEAN FORMAT
+# =============================================================================
+logger = logging.getLogger('REFLEX AGENT')
+logger.setLevel(logging.INFO)
+
+# Simple formatter: [HH:MM:SS] message
+class CleanFormatter(logging.Formatter):
+    def format(self, record):
+        # Extract status from extra dict for context (optional)
+        status = getattr(record, 'status', '')
+        if status:
+            record.msg = f"[{status.upper()}] {record.msg}"
+        return super().format(record)
+
+# Console handler - timestamp only
+handler = logging.StreamHandler()
+handler.setFormatter(CleanFormatter(
+    '[%(asctime)s] %(message)s',
+    datefmt='%H:%M:%S'
+))
+logger.addHandler(handler)
+
+
 
 # =============================================================================
 # OLLAMA SETUP
 # =============================================================================
-model_name = "qwen2.5:3b" #"llama3.2:latest"
+model_name = "llama3.2:latest"  #"qwen2.5:3b"
 llm = ChatOllama(model=model_name, temperature=0.1)
+logger.info(f"Using model: {model_name}", extra={'status': 'INFO'})
+
 
 # =============================================================================
 # STATE
 # =============================================================================
 class ReflectionState(TypedDict):
-    messages: Annotated[List[BaseMessage], "add"]
-    reflections: Annotated[int, "add"]
-    draft_count: Annotated[int, "add"]
-    quality_scores: Annotated[List[float], "add"]
+    messages: Annotated[List[BaseMessage], add_messages]
+    reflections: int
+    draft_count: int
+    quality_scores: List[float]
     is_finalized: bool
     last_node: str
+
 
 def get_best_quality(state: ReflectionState) -> float:
     scores = state.get("quality_scores", [])
     return max(scores) if scores else 0.0
 
+
 # =============================================================================
-# PROMPTS
+# PROMPTS (Fixed minor syntax)
 # =============================================================================
 draft_prompt = ChatPromptTemplate.from_messages([
-    ("system", """You are an expert teacher. Write CLEAR, ACCURATE explanations.
-REQUIRED FORMAT:
-**INTRODUCTION**
-**STEP-BY-STEP PROCESS**
-**KEY EQUATION**
-**IMPORTANT FACTORS**
-
-Improve using all previous feedback. Aim for 200-300 words."""),
+    ("system", """Expert teacher. Answer in max 10 sentences or less.
+Clear, accurate, complete. Use feedback to improve.
+NO headings, NO fluff."""),
     MessagesPlaceholder(variable_name="history"),
     ("human", "{query}")
 ])
 
+
 critique_prompt = ChatPromptTemplate.from_messages([
-    ("system", """You are a strict professor grading an explanation on a 0-10 scale.
-MANDATORY FORMAT - COPY EXACTLY:
+    ("system", """Strict grader. Score 0-10 based on:
+✓ Clear (easy to understand)
+✓ Accurate (factually correct)  
+✓ Short (≤5 lines)
+✓ Complete (covers essentials)
+
+EXACT FORMAT REQUIRED:
 
 SCORE: X/10
+GOOD: YES or NO
+SUGGESTION: 1 short fix (max 10 words)"
 
-STRENGTHS:
-* Point 1
-* Point 2
-
-WEAKNESSES:
-* Issue 1
-* Issue 2
-
-IMPROVEMENTS:
-* Suggestion 1
-* Suggestion 2
-
-Score FIRST. 10 = perfect, 0 = terrible."""),
-    ("human", "GRADE THIS EXPLANATION:\n\n{draft}")
+Replace X with number 0-10."""),
+    ("human", "GRADE:\n\n{draft}")
 ])
 
+final_prompt = ChatPromptTemplate.from_template(
+    """From these drafts and critiques, write FINAL answer (≤5 lines):
+{history}
+
+Answer only - no headings."""
+)
+
+
 # =============================================================================
-# NODES
+# NODES WITH LOGGING
 # =============================================================================
 def generate_draft(state: ReflectionState) -> dict:
+    logger.info(f"Generating DRAFT {state.get('draft_count', 0) + 1}", extra={'status': 'DRAFT'})
+    
     query = state["messages"][0].content
     history = state["messages"][1:]
+    
     chain = draft_prompt | llm
     response = chain.invoke({"query": query, "history": history})
     
     draft_count = state.get("draft_count", 0) + 1
+    draft_content = response.content.strip()
+    logger.info(f"Draft {draft_count} generated ({len(draft_content)} chars)", extra={'status': 'DRAFT'})
     
     return {
-        "messages": [AIMessage(content=f".. DRAFT #{draft_count}\n\n{response.content}")],
+        "messages": [AIMessage(content=f"DRAFT {draft_count}:\n{draft_content}")],
         "draft_count": draft_count,
         "last_node": "generate_draft"
     }
 
-def reflect_critique(state: ReflectionState) -> dict:
-    # Extract the most recent draft
-    drafts = [m for m in state["messages"] if m.content.startswith(".. DRAFT")]
-    if not drafts:
-        draft_text = ""
-    else:
-        draft_text = drafts[-1].content.split("\n\n", 1)[1] if "\n\n" in drafts[-1].content else drafts[-1].content
 
+def reflect_critique(state: ReflectionState) -> dict:
+    logger.info(f"Starting CRITIQUE {state.get('reflections', 0) + 1}", extra={'status': 'CRITIQUE'})
+    
+    drafts = [m for m in state["messages"] if m.content.startswith("DRAFT")]
+    if not drafts:
+        logger.info("No draft found for critique", extra={'status': 'CRITIQUE'})
+        return {
+            "messages": [AIMessage(content="CRITIQUE 1:\nNo draft found")],
+            "reflections": 1,
+            "quality_scores": [0.0],
+            "last_node": "reflect_critique"
+        }
+    
+    draft_text = drafts[-1].content.split("DRAFT", 1)[1].strip()
+    logger.info(f"Critiquing draft ({len(draft_text)} chars)", extra={'status': 'CRITIQUE'})
+    
     chain = critique_prompt | llm
     response = chain.invoke({"draft": draft_text})
-    
+    content = response.content.strip()
+
     # Robust score extraction
     score = 5.0
-    content = response.content
-    score_match = re.search(r"SCORE:\s*(\d+(?:\.\d+)?)\s*/\s*10", content, re.IGNORECASE)
+    score_match = re.search(r"SCORE[:\s]*(\d+(?:\.\d+)?)", content, re.IGNORECASE)
     if score_match:
         try:
-            score = float(score_match.group(1))
-            score = max(0.0, min(10.0, score))
+            score = max(0.0, min(10.0, float(score_match.group(1))))
         except:
-            pass
-
+            score = 5.0
+    
+    logger.info(f"Score extracted: {score:.1f}/10", extra={'status': 'CRITIQUE'})
+    
     reflections = state.get("reflections", 0) + 1
     
     return {
-        "messages": [AIMessage(content=f"🔍 CRITIQUE #{reflections}\n\n{content}")],
+        "messages": [AIMessage(content=f"CRITIQUE {reflections}:\n{content}")],
         "reflections": reflections,
-        "quality_scores": state["quality_scores"] + [score],  # append to list
+        "quality_scores": state["quality_scores"] + [score],
         "last_node": "reflect_critique"
     }
 
+
 def finalize_answer(state: ReflectionState) -> dict:
-    # Use recent history for context (last 6 messages)
-    recent_history = "\n\n".join([m.content for m in state["messages"][-6:]])
+    logger.info("GENERATING FINAL ANSWER", extra={'status': 'FINAL'})
     
-    final_prompt = ChatPromptTemplate.from_template(
-        """Using the entire refinement process below, produce the FINAL PERFECT ANSWER.
-
-Process history:
-{history}
-
-Required format:
-  **FINAL ANSWER**
-
-**Introduction**
-**Step-by-Step Process**
-**Key Equation**
-**Important Factors**
-
-Make it comprehensive, clear, accurate, and beautifully polished."""
-    )
+    recent = "\n---\n".join([m.content for m in state["messages"][-6:]])
+    logger.info(f"Using {len(recent)} chars of history", extra={'status': 'FINAL'})
     
     chain = final_prompt | llm
-    response = chain.invoke({"history": recent_history})
+    response = chain.invoke({"history": recent})
+    final_content = response.content.strip()
+    
+    logger.info(f"Final answer generated ({len(final_content)} chars)", extra={'status': 'FINAL'})
     
     return {
-        "messages": [AIMessage(content=f" **FINAL ANSWER**\n\n{response.content}")],
+        "messages": [AIMessage(content=f"**FINAL ANSWER** (≤5 lines):\n{final_content}")],
         "is_finalized": True,
         "last_node": "finalize_answer"
     }
 
+
 # =============================================================================
-# ROUTING
+# ROUTING WITH LOGGING
 # =============================================================================
-def route_reflection(state: ReflectionState) -> Literal["reflect_critique", "generate_draft", "finalize_answer"]:
+def route_reflection(state: ReflectionState) -> Literal["reflect_critique", "generate_draft", "finalize_answer", str]:
     reflections = state.get("reflections", 0)
     best_quality = get_best_quality(state)
     last_node = state.get("last_node", "")
     
     MAX_REFLECTIONS = 3
-    MIN_QUALITY = 8.0  # Slightly higher threshold for better results
+    MIN_QUALITY = 8.0
     
-    print(f"... Reflections: {reflections}/{MAX_REFLECTIONS} | Best score: {best_quality:.1f}/10 | Last: {last_node}")
+    logger.info(f"🔄 Reflections: {reflections}/{MAX_REFLECTIONS} | Best: {best_quality:.1f}/10 | Last: {last_node}", extra={'status': 'ITER'})
     
-    # Termination conditions
-    if reflections >= MAX_REFLECTIONS or best_quality >= MIN_QUALITY:
-        print(" ! Terminating → FINALIZE")
+    if state.get("is_finalized", False):
+        logger.info("Already finalized → END", extra={'status': 'END'})
+        return END
+    
+    if reflections >= MAX_REFLECTIONS:
+        logger.info("❌ Max reflections reached → FINALIZE", extra={'status': 'END'})
         return "finalize_answer"
     
-    # Normal alternation
+    if best_quality >= MIN_QUALITY:
+        logger.info(f"⭐ Quality {best_quality:.1f} ≥ {MIN_QUALITY} → FINALIZE", extra={'status': 'END'})
+        return "finalize_answer"
+    
     if last_node == "generate_draft":
-        print("--> Next → CRITIQUE")
+        logger.info("Draft done → CRITIQUE", extra={'status': 'ITER'})
         return "reflect_critique"
     elif last_node == "reflect_critique":
-        print("-->Next → DRAFT")
+        logger.info("Critique done → DRAFT", extra={'status': 'ITER'})
         return "generate_draft"
     
-    # Fallback
-    print("Fallback routing")
+    logger.info("Default → CRITIQUE", extra={'status': 'ITER'})
     return "reflect_critique"
 
+
 # =============================================================================
-# BUILD GRAPH
+# GRAPH
 # =============================================================================
 def create_reflection_agent():
+    logger.info("Building reflection graph...", extra={'status': 'INFO'})
+    
     builder = StateGraph(ReflectionState)
     
     builder.add_node("generate_draft", generate_draft)
@@ -184,42 +229,54 @@ def create_reflection_agent():
     
     builder.set_entry_point("generate_draft")
     
-    # Conditional edges from both draft and critique
     builder.add_conditional_edges(
-        "generate_draft",
+        "generate_draft", 
         route_reflection,
         {
-            "reflect_critique": "reflect_critique",
-            "generate_draft": "generate_draft",
-            "finalize_answer": "finalize_answer"
+            "reflect_critique": "reflect_critique", 
+            "generate_draft": "generate_draft", 
+            "finalize_answer": "finalize_answer",
+            END: END
         }
     )
     builder.add_conditional_edges(
-        "reflect_critique",
+        "reflect_critique", 
         route_reflection,
         {
-            "reflect_critique": "reflect_critique",
-            "generate_draft": "generate_draft",
-            "finalize_answer": "finalize_answer"
+            "reflect_critique": "reflect_critique", 
+            "generate_draft": "generate_draft", 
+            "finalize_answer": "finalize_answer",
+            END: END
         }
     )
-    
     builder.add_edge("finalize_answer", END)
     
-    return builder.compile()
+    app = builder.compile()
+    logger.info("Graph compiled successfully", extra={'status': 'INFO'})
+    return app
+
 
 # =============================================================================
 # RUN
 # =============================================================================
 if __name__ == "__main__":
-    print(f"Starting Reflection Agent with {model_name}")
+    logger.info("REFLECTION AGENT STARTED", extra={'status': 'START'})
+    print("="*80)
     
     app = create_reflection_agent()
     
-    query = HumanMessage(content="Explain photosynthesis step-by-step")
+    try:
+        app.get_graph().draw_png("reflect_agent_logged.png")
+        logger.info("Graph saved: reflect_agent_logged.png", extra={'status': 'INFO'})
+    except Exception as e:
+        logger.info(f"Graph PNG failed: {e}", extra={'status': 'INFO'})
+        print(app.get_graph().draw_mermaid())
+    
+    query = "Explain Reflection Agent"
+    logger.info(f"Query: {query}", extra={'status': 'INFO'})
     
     initial_state = {
-        "messages": [query],
+        "messages": [HumanMessage(content=query)],
         "reflections": 0,
         "draft_count": 0,
         "quality_scores": [],
@@ -227,17 +284,26 @@ if __name__ == "__main__":
         "last_node": ""
     }
     
-    print("\n" + "="*80)
-    print("STARTING REFLECTION CYCLE\n")
-    
-    result = app.invoke(initial_state, {"recursion_limit": 20})
+    result = app.invoke(initial_state, {"recursion_limit": 10})
     
     print("\n" + "="*80)
-    print("REFLECTION CYCLE COMPLETE")
-    print(f"Drafts created: {result['draft_count']}")
-    print(f"Critiques performed: {result['reflections']}")
-    print(f"Best quality score: {get_best_quality(result):.1f}/10")
-    print("\nFULL OUTPUT:\n")
+    logger.info("AGENT COMPLETE", extra={'status': 'END'})
+    print("="*80)
     
-    for i, msg in enumerate(result["messages"], 1):
-        print(f"{i}. {msg.content}\n{'-'*60}")
+    print(f"SUMMARY: Drafts: {result['draft_count']} | Critiques: {result['reflections']} | Best: {get_best_quality(result):.1f}/10")
+    
+    print("\n FINAL ANSWER:")
+    print("-" * 50)
+    
+    final_found = False
+    for msg in reversed(result["messages"]):
+        if isinstance(msg, AIMessage) and "FINAL ANSWER" in msg.content:
+            print(msg.content.split("FINAL ANSWER", 1)[1].strip())
+            final_found = True
+            break
+    
+    if not final_found:
+        logger.info("No final answer found in messages", extra={'status': 'INFO'})
+    
+    logger.info("PROCESS COMPLETE", extra={'status': 'END'})
+    print("\n✅ DONE!")
