@@ -21,6 +21,7 @@ rad.json
 #Test results file
 TestResults.xml
 
+Untitled.ipynb
 .env
 test.py
 RAG APP
