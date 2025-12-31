@@ -33,3 +33,4 @@ venv
 logs
 models
 
+.ipynb_checkpoints
