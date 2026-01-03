@@ -1,0 +1,36 @@
+[
+  {
+    "iteration": 1,
+    "human_prompt": "Write LinkedIn post: IBM software developer job under 160 characters",
+    "ai_post": "\ud83d\ude80 IBM Software Developer roles: Design, code & deploy scalable cloud apps in agile teams! Build high-i #IBMDev #SoftwareEngineering #TechJobs",
+    "critique": "STRENGTHS:\n- **Exciting hook** with emojis and action verbs grabs attention for IBM dev roles[1][3].\n- **Relevant hashtags** (#IBMDev, #SoftwareEngineering, #TechJobs) boost LinkedIn discoverability[5...",
+    "chars": 141,
+    "hashtags": [
+      "#IBMDev",
+      "#SoftwareEngineering",
+      "#TechJobs"
+    ],
+    "valid_length": true
+  },
+  {
+    "iteration": 2,
+    "human_prompt": "CRITIQUE 1: STRENGTHS:\n- **Exciting hook** with emojis and action verbs grabs attention for IBM dev ...",
+    "ai_post": "I appreciate the detailed critique framework, but I need to clarify: **you haven't provided the original LinkedIn post for me to evaluate**.",
+    "critique": "STRENGTHS: \n- Framework-heavy post delivers scannable, actionable value like hooks/CTAs, aligning with top LinkedIn formulas for high engagement[1][2].\n- First-person insights build authenticity, pass...",
+    "chars": 140,
+    "hashtags": [],
+    "valid_length": true
+  },
+  {
+    "iteration": 3,
+    "human_prompt": "CRITIQUE 2: STRENGTHS: \n- Framework-heavy post delivers scannable, actionable value like hooks/CTAs,...",
+    "ai_post": "**Refined LinkedIn Post (158 chars):**  \n\ud83d\ude80 **Struggling with LinkedIn hooks?** My 3-part framework boosted cli #LinkedInTips #ContentStrategy",
+    "critique": "",
+    "chars": 141,
+    "hashtags": [
+      "#LinkedInTips",
+      "#ContentStrategy"
+    ],
+    "valid_length": true
+  }
+]
