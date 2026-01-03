@@ -33,4 +33,5 @@ venv
 logs
 models
 course
+Course
 .ipynb_checkpoints
