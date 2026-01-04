@@ -1,0 +1,27 @@
+ollama_config ={
+    {
+        "model": "granite4:350m",
+        "api_type": "ollama",
+        "client_host": "http://192.168.0.1:11434",
+        "stream": False,
+
+    },
+    {
+        "model": "llama3.2:latest",
+        "api_type": "ollama",
+        "client_host": "http://192.168.0.1:11434",
+
+    },
+    {
+        "model": "qwen2.5:3b",
+        "api_type": "ollama",
+        "client_host": "http://192.168.0.1:11434",
+
+    }
+    {
+        "model": "phi3:mini",
+        "api_type": "ollama",
+        "client_host": "http://192.168.0.1:11434",
+
+    }
+}
