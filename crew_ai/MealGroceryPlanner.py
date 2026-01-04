@@ -18,6 +18,11 @@ perplexity_llm = LLM(
     # temperature=0.3,
     # max_tokens=2000
 )
+ollama_llm = LLM(
+    model="ollama/llama3.2:latest",
+    base_url="http://localhost:11434",
+    max_tokens= 500
+)
 
 class GroceryItem(BaseModel):
     """Individual grocery item"""
