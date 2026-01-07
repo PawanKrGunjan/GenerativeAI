@@ -5,26 +5,33 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-
-# Step 1: Configure the LLM to use (e.g., GPT-4o Mini via OpenAI)
-config_list=[
+# Step 1: Configure the LLM to use (fixed model name and removed deprecated context manager)
+config_list = [
     {
         "model": "sonar-pro",
         "api_key": os.getenv("PERPLEXITY_API_KEY"),
         "base_url": "https://api.perplexity.ai",
-        #"api_rate_limit": 60.0,
-        #"api_type": "openai",
+        "api_type": "openai",
         "temperature": 0.3,
-        "max_tokens": 1000},
+        "max_tokens": 1000
+    },
     {
         "model": "llama3.2:latest",
-        "api_type": 'ollama',
+        "api_type": "ollama",
         "client_host": "http://192.168.0.1:11434",
         "temperature": 0.0,
-        "max_tokens": 200}]
+        "max_tokens": 200
+    },
+    {
+        "model": "gemini-2.5-flash",  # Correct model name with version [web:21]
+        "api_key": os.getenv("GEMINI_API_KEY"),
+        "api_type": "google",
+        "temperature": 0.3,
+        "max_tokens": 8192  # Gemini max output limit [web:21]
+    }
+]
 
-llm_config = LLMConfig(config_list[0])
-#print(llm_config)
+llm_config = LLMConfig(config_list[2])  # Using gemini (index 1)
 
 # Step 2: Define system message for bug triage assistant
 triage_system_message = """
@@ -39,12 +46,12 @@ Once all bugs are processed, summarize what was escalated, closed, or marked as 
 End by saying: "You can type exit to finish."
 """
 
-# Step 3: Create the assistant agent
-with llm_config:
-    triage_bot = ConversableAgent(
-        name="triage_bot",
-        system_message=triage_system_message,
-    )
+# Step 3: Create the assistant agent (REMOVED deprecated 'with llm_config:')
+triage_bot = ConversableAgent(
+    name="triage_bot",
+    system_message=triage_system_message,
+    llm_config=llm_config  # Pass directly - no context manager
+)
 
 # Step 4: Create the human agent who will review each recommendation
 human = ConversableAgent(
@@ -72,10 +79,10 @@ initial_prompt = (
 )
 
 # Step 6: Start the conversation
-response = human.run(
+response = human.initiate_chat(
     recipient=triage_bot,
     message=initial_prompt,
 )
 
-# Step 7: Display the response
-response.process()
+# Step 7: No need for response.process() - initiate_chat handles it
+#response.process()

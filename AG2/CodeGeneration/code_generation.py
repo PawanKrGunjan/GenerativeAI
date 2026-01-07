@@ -7,25 +7,34 @@ load_dotenv()
 
 
 # Step 1: Configure the LLM to use (e.g., GPT-4o Mini via OpenAI)
-config_list=[
+config_list = [
     {
         "model": "sonar-pro",
         "api_key": os.getenv("PERPLEXITY_API_KEY"),
         "base_url": "https://api.perplexity.ai",
-        #"api_rate_limit": 60.0,
         "api_type": "openai",
         "temperature": 0.3,
-        "max_tokens": 1000},
+        "max_tokens": 1000
+    },
     {
         "model": "llama3.2:latest",
-        "api_type": 'ollama',
+        "api_type": "ollama",
         "client_host": "http://192.168.0.1:11434",
         "temperature": 0.0,
-        "max_tokens": 200}]
+        "max_tokens": 200
+    },
+    {
+        "model": "gemini-2.5-flash",  # Correct model name with version [web:21]
+        "api_key": os.getenv("GEMINI_API_KEY"),
+        "api_type": "google",
+        "temperature": 0.3,
+        "max_tokens": 8192  # Gemini max output limit [web:21]
+    }
+]
+
 
 # Step 1: Configure the LLM to use (e.g., GPT-4o Mini via OpenAI)
-#llm_config = LLMConfig(api_type="openai", model="gpt-4o-mini")
-llm_config = LLMConfig(config_list[0])
+llm_config = LLMConfig(config_list[2])
 print(llm_config)
 
 # Step 2: Create the assistant agent (code-writing AI)
@@ -57,7 +66,7 @@ chat_result = user_proxy.initiate_chat(
 from IPython.display import Image, display
 import os
 
-image_path = "coding/sine_wave.png"
+image_path = "coding/graph.png"
 if os.path.exists(image_path):
     display(Image(filename=image_path))
 else:
