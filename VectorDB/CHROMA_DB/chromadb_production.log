@@ -35,3 +35,21 @@
 2026-01-09 08:25:48,708 - __main__ - INFO - Collection stats: 72 docs, 6 domains
 2026-01-09 08:25:48,719 - __main__ - INFO - Production delete completed
 2026-01-09 08:25:48,719 - __main__ - INFO - ChromaDB production master class completed successfully
+2026-01-09 08:52:27,807 - datasets - INFO - TensorFlow version 2.20.0 available.
+2026-01-09 08:52:28,743 - sentence_transformers.SentenceTransformer - INFO - Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+2026-01-09 08:52:32,920 - chromadb.telemetry.product.posthog - INFO - Anonymized telemetry enabled. See                     https://docs.trychroma.com/telemetry for more information.
+2026-01-09 08:52:32,997 - __main__ - INFO - Loaded existing collection: Test_Collection_Production
+2026-01-09 08:52:32,997 - __main__ - INFO - Prepared 24 multi-domain documents
+2026-01-09 08:52:33,089 - __main__ - INFO - Batch added 24 documents
+2026-01-09 08:52:33,111 - __main__ - INFO - Updated production document
+2026-01-09 08:52:33,127 - __main__ - INFO - Tech similarity search completed
+2026-01-09 08:52:33,127 - __main__ - INFO - Universal search: 'python programming jobs' domain=None rating>=0 price<=None
+2026-01-09 08:52:33,138 - __main__ - INFO - RAG test completed: 'python programming jobs' -> 5 results
+2026-01-09 08:52:33,138 - __main__ - INFO - Universal search: 'indian movies action' domain=movies rating>=0 price<=None
+2026-01-09 08:52:33,148 - __main__ - INFO - RAG test completed: 'indian movies action' -> 5 results
+2026-01-09 08:52:33,148 - __main__ - INFO - Universal search: 'apple iphone macbook' domain=None rating>=0 price<=150000
+2026-01-09 08:52:33,160 - __main__ - INFO - RAG test completed: 'apple iphone macbook' -> 5 results
+2026-01-09 08:52:33,160 - __main__ - INFO - Universal search: 'rock music queen' domain=music rating>=4.5 price<=None
+2026-01-09 08:52:33,170 - __main__ - INFO - RAG test completed: 'rock music queen' -> 0 results
+2026-01-09 08:52:33,173 - __main__ - INFO - Collection stats: 84 docs, 6 domains
+2026-01-09 08:52:33,185 - __main__ - INFO - Production delete completed

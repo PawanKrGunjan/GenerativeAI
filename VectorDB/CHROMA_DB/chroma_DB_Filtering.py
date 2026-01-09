@@ -26,8 +26,8 @@ sent_embedder = embedding_functions.SentenceTransformerEmbeddingFunction(
 # 2. CLIENT & COLLECTION
 client = chromadb.Client()
 collection = client.create_collection(
-    name="indian_news_fixed",
-    metadata={"description": "Fixed Indian news ChromaDB demo"},
+    name="indian_news",
+    metadata={"description": "Indian news ChromaDB demo"},
     embedding_function=sent_embedder  # ✅ FIXED: Direct assignment
 )
 
