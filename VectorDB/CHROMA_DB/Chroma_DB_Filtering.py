@@ -19,7 +19,7 @@ print("CHROMA DB - PRODUCTION VECTOR DATABASE")
 print("="*70)
 
 # 1. EMBEDDING FUNCTION (384-dim)
-ef = embedding_functions.SentenceTransformerEmbeddingFunction(
+sent_embedder = embedding_functions.SentenceTransformerEmbeddingFunction(
     model_name="all-MiniLM-L6-v2"
 )
 
@@ -28,7 +28,7 @@ client = chromadb.Client()
 collection = client.create_collection(
     name="indian_news_fixed",
     metadata={"description": "Fixed Indian news ChromaDB demo"},
-    embedding_function=ef  # ✅ FIXED: Direct assignment
+    embedding_function=sent_embedder  # ✅ FIXED: Direct assignment
 )
 
 print(f"✅ Collection: {collection.name}")
@@ -40,7 +40,7 @@ documents = [
     "Virat Kohli scores 150 vs Australia at Eden Gardens",         
     "Article 370 verdict upheld by Supreme Court",  # Shortened for demo
     "ISRO launches Gaganyaan test flight from Sriharikota",
-    "Budget 2025: Tax relief for middle class - FM Sitharaman",
+    "Budget 2025: Tax relisent_embedder for middle class - FM Sitharaman",
     "PM Modi inaugurates new Parliament building",
     "COVID-19 cases rise in Kerala due to Omicron variant"
 ]

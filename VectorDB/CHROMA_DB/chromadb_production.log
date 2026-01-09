@@ -1,0 +1,37 @@
+2026-01-09 08:16:47,211 - datasets - INFO - TensorFlow version 2.20.0 available.
+2026-01-09 08:16:47,889 - sentence_transformers.SentenceTransformer - INFO - Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+2026-01-09 08:18:46,052 - datasets - INFO - TensorFlow version 2.20.0 available.
+2026-01-09 08:18:46,730 - sentence_transformers.SentenceTransformer - INFO - Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+2026-01-09 08:18:50,674 - chromadb.telemetry.product.posthog - INFO - Anonymized telemetry enabled. See                     https://docs.trychroma.com/telemetry for more information.
+2026-01-09 08:18:50,751 - __main__ - INFO - Created new production collection: Test_Collection_Production
+2026-01-09 08:18:50,752 - __main__ - INFO - Prepared 24 multi-domain documents
+2026-01-09 08:23:55,065 - datasets - INFO - TensorFlow version 2.20.0 available.
+2026-01-09 08:23:55,752 - sentence_transformers.SentenceTransformer - INFO - Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+2026-01-09 08:23:59,829 - chromadb.telemetry.product.posthog - INFO - Anonymized telemetry enabled. See                     https://docs.trychroma.com/telemetry for more information.
+2026-01-09 08:23:59,904 - __main__ - INFO - Loaded existing collection: Test_Collection_Production
+2026-01-09 08:23:59,904 - __main__ - INFO - Prepared 24 multi-domain documents
+2026-01-09 08:23:59,972 - __main__ - INFO - Added 24 items
+2026-01-09 08:23:59,984 - __main__ - INFO - Rank 1: Python Crash Course - beginner programming book... | Dist: 0.363 | books
+2026-01-09 08:23:59,985 - __main__ - INFO - Rank 2: Python Crash Course - beginner programming book... | Dist: 0.363 | books
+2026-01-09 08:23:59,985 - __main__ - INFO - Rank 3: Python Developer - Django FastAPI experience... | Dist: 0.458 | jobs
+2026-01-09 08:23:59,985 - __main__ - INFO - 
+========================================================================================================================
+2026-01-09 08:25:42,218 - datasets - INFO - TensorFlow version 2.20.0 available.
+2026-01-09 08:25:42,894 - sentence_transformers.SentenceTransformer - INFO - Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+2026-01-09 08:25:48,466 - chromadb.telemetry.product.posthog - INFO - Anonymized telemetry enabled. See                     https://docs.trychroma.com/telemetry for more information.
+2026-01-09 08:25:48,553 - __main__ - INFO - Loaded existing collection: Test_Collection_Production
+2026-01-09 08:25:48,553 - __main__ - INFO - Prepared 24 multi-domain documents
+2026-01-09 08:25:48,630 - __main__ - INFO - Batch added 24 documents
+2026-01-09 08:25:48,651 - __main__ - INFO - Updated production document
+2026-01-09 08:25:48,665 - __main__ - INFO - Tech similarity search completed
+2026-01-09 08:25:48,665 - __main__ - INFO - Universal search: 'python programming jobs' domain=None rating>=0 price<=None
+2026-01-09 08:25:48,675 - __main__ - INFO - RAG test completed: 'python programming jobs' -> 5 results
+2026-01-09 08:25:48,675 - __main__ - INFO - Universal search: 'indian movies action' domain=movies rating>=0 price<=None
+2026-01-09 08:25:48,685 - __main__ - INFO - RAG test completed: 'indian movies action' -> 5 results
+2026-01-09 08:25:48,685 - __main__ - INFO - Universal search: 'apple iphone macbook' domain=None rating>=0 price<=150000
+2026-01-09 08:25:48,695 - __main__ - INFO - RAG test completed: 'apple iphone macbook' -> 5 results
+2026-01-09 08:25:48,695 - __main__ - INFO - Universal search: 'rock music queen' domain=music rating>=4.5 price<=None
+2026-01-09 08:25:48,705 - __main__ - INFO - RAG test completed: 'rock music queen' -> 0 results
+2026-01-09 08:25:48,708 - __main__ - INFO - Collection stats: 72 docs, 6 domains
+2026-01-09 08:25:48,719 - __main__ - INFO - Production delete completed
+2026-01-09 08:25:48,719 - __main__ - INFO - ChromaDB production master class completed successfully
