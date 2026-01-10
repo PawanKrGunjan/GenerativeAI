@@ -35,3 +35,5 @@ models
 course
 Course
 .ipynb_checkpoints
+Data
+chroma_movie_db
