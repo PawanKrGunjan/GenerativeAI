@@ -1,0 +1,12 @@
+# installing necessary packages in my_env
+pip install youtube-transcript-api==1.2.1
+pip install faiss-cpu==1.8.0
+pip install langchain==0.2.6 | tail -n 1
+pip install langchain-community==0.2.6 | tail -n 1
+pip install ibm-watsonx-ai==1.0.10 | tail -n 1
+pip install langchain_ibm==0.1.8 | tail -n 1
+pip install gradio==4.44.1 | tail -n 1
+# Uninstall any existing huggingface_hub first
+python3.11 -m pip uninstall -y huggingface_hub
+# Install a version compatible with gradio 4.44.1
+python3.11 -m pip install huggingface_hub==0.16.4
