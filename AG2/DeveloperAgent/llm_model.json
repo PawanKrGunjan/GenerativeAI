@@ -1,0 +1,24 @@
+[
+  {
+    "model": "sonar-pro",
+    "api_key": "YOUR_PERPLEXITY_API_KEY",
+    "base_url": "https://api.perplexity.ai",
+    "api_type": "openai",
+    "temperature": 0.3,
+    "max_tokens": 1000
+  },
+  {
+    "model": "llama3.2:1b",
+    "api_type": "ollama",
+    "client_host": "http://192.168.0.1:11434",
+    "temperature": 0.0,
+    "max_tokens": 200
+  },
+  {
+    "model": "gemini-2.5-flash",
+    "api_key": "YOUR_GEMINI_API_KEY",
+    "api_type": "google",
+    "temperature": 0.3,
+    "max_tokens": 8192
+  }
+]
