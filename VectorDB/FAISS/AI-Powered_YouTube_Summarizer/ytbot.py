@@ -30,16 +30,7 @@ class RAGConfig:
         return OllamaEmbeddings(
             model=RAGConfig.EMBEDDING_MODEL
         )
-    
-    # def embedding_model():
-    #     embedding_model = SentenceTransformer(HF_EMBEDDING_MODEL, device='cpu')
-    #     # Alternatives you might want to compare later:
-    #     # embedding_model = SentenceTransformer('all-MiniLM-L6-v2', device='cpu')     # fastest
-    #     # embedding_model = SentenceTransformer('all-mpnet-base-v2', device='cpu')    # very strong
-    #     dimension = embedding_model.get_sentence_embedding_dimension()
-    #     print(f"→ Model: {embedding_model._first_module().auto_model.config._name_or_path}")
-    #     print(f"→ Embedding dimension: {dimension}\n")
-    #     return embedding_model
+
 
 
 def get_video_id(url):    
@@ -73,7 +64,6 @@ def get_transcript(url):
     
     return transcript if transcript else None
 
-
 def process(transcript):
     # Initialize an empty string to hold the formatted transcript
     txt = ""
@@ -90,7 +80,6 @@ def process(transcript):
     # Return the processed transcript as a single string
     return txt
 
-
 def chunk_transcript(processed_transcript, chunk_size=200, chunk_overlap=20):
     # Initialize the RecursiveCharacterTextSplitter with specified chunk size and overlap
     text_splitter = RecursiveCharacterTextSplitter(
@@ -102,7 +91,6 @@ def chunk_transcript(processed_transcript, chunk_size=200, chunk_overlap=20):
     chunks = text_splitter.split_text(processed_transcript)
     return chunks
 
-    
 def create_faiss_index(chunks, embedding_model):
     """
     Create a FAISS index from text chunks using the specified embedding model.
@@ -113,19 +101,6 @@ def create_faiss_index(chunks, embedding_model):
     """
     # Use the FAISS library to create an index from the provided text chunks
     return FAISS.from_texts(chunks, embedding_model)
-
-def perform_similarity_search(faiss_index, query, k=3):
-    """
-    Search for specific queries within the embedded transcript using the FAISS index.
-    
-    :param faiss_index: The FAISS index containing embedded text chunks
-    :param query: The text input for the similarity search
-    :param k: The number of similar results to return (default is 3)
-    :return: List of similar results
-    """
-    # Perform the similarity search using the FAISS index
-    results = faiss_index.similarity_search(query, k=k)
-    return results
 
 def create_summary_prompt():
     """
@@ -157,7 +132,6 @@ def create_summary_prompt():
     
     return prompt
 
-
 def create_summary_chain(llm, prompt):
     """
     Create a runnable chain for generating summaries
@@ -168,7 +142,6 @@ def create_summary_chain(llm, prompt):
     :return: Runnable chain
     """
     return prompt | llm
-
 
 def retrieve(query, faiss_index, k=7):
     """
@@ -184,7 +157,6 @@ def retrieve(query, faiss_index, k=7):
     """
     relevant_context = faiss_index.similarity_search(query, k=k)
     return relevant_context
-
 
 def create_qa_prompt_template():
     """
@@ -382,7 +354,7 @@ if __name__ == "__main__":
     # Test QA prompt formatting
     qa_prompt_template = create_qa_prompt_template()
 
-    context = "What is title of the video."
+    context = "Attention is all you need"
     question = "What are the key principles discussed in the video?"
 
     generated_prompt = qa_prompt_template.format(
