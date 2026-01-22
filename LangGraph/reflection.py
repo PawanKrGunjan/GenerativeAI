@@ -17,6 +17,7 @@ from dotenv import load_dotenv
 from langchain_core.messages import HumanMessage, AIMessage, BaseMessage
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_openai import ChatOpenAI
+from langchain_ollama import ChatOllama
 from langgraph.graph import StateGraph, END
 from langgraph.graph.message import add_messages
 from langgraph.checkpoint.memory import MemorySaver
@@ -86,6 +87,9 @@ perplexity_llm = ChatOpenAI(
     temperature=0.0  # Deterministic
 )
 
+MODEL_NAME = "granite4:350m" #"qwen2.5:7b"  # change if needed (e.g., "llama3.1:8b")
+llm = ChatOllama(model=MODEL_NAME, temperature=0.0)
+
 generation_prompt = ChatPromptTemplate.from_messages([
     ("system", """LinkedIn content specialist. CRITICAL: Exactly {max_chars} chars MAX.
 Structure: Hook (20c) + Value (90c) + CTA+hashtags (50c).
@@ -102,8 +106,8 @@ Max 300 chars total. Specific to LinkedIn engagement."""),
     ("human", "{post_to_critique}")
 ])
 
-generate_chain = generation_prompt | perplexity_llm
-reflect_chain = reflection_prompt | perplexity_llm
+generate_chain = generation_prompt | llm
+reflect_chain = reflection_prompt | llm
 
 # ========================================
 # STATE

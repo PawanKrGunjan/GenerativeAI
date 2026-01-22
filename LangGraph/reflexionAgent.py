@@ -9,7 +9,6 @@ from pydantic import BaseModel, Field
 from langchain_ollama import ChatOllama
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.messages import AnyMessage, HumanMessage, AIMessage
-
 from langgraph.graph import StateGraph, START, END
 from langgraph.graph.message import add_messages
 
