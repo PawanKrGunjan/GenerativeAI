@@ -1,0 +1,52 @@
+[
+  {
+    "iteration": 1,
+    "human_prompt": "Write LinkedIn post: I am casually looking for Agentic AI Role in Noida",
+    "ai_post": "I'm exploring opportunities with Agentic AI roles in Noida. What do you think?",
+    "critique": "STRENGTHS: Leveraging Agentic AI for innovative solutions and data-driven insights. - Demonstrating adaptability to evolving tech trends. - Fostering collaboration between diverse teams. - Encouraging continuous learning and improvement. - Promoting ethical considerations in AI development. - Driving innovation across various industries.",
+    "post_chars": 78,
+    "hashtags": [],
+    "truncated": false,
+    "timestamp": "2026-01-25T09:52:32.264003"
+  },
+  {
+    "iteration": 2,
+    "human_prompt": "Write LinkedIn post: I am casually looking for Agentic AI Role in Noida",
+    "ai_post": "I am looking for an Agentic AI role in Noida, where I can leverage innovative solutions and data-driven insights while fostering collaboration among diverse tea",
+    "critique": "STRENGTHS: - Leveraging innovative solutions and data-driven insights  \nWEAKNESSES: - Foster collaboration among diverse teams  \nIMPROVEMENTS: 1) Collaborative team environment  \n2) Innovative problem-solving tools",
+    "post_chars": 160,
+    "hashtags": [],
+    "truncated": true,
+    "timestamp": "2026-01-25T09:52:36.233917"
+  },
+  {
+    "iteration": 3,
+    "human_prompt": "Write LinkedIn post: I am casually looking for Agentic AI Role in Noida",
+    "ai_post": "I am looking for an Agentic AI role in Noida to leverage innovative solutions and foster collaboration among diverse teams.",
+    "critique": "STRENGTHS: - Leveraging innovative solutions - Fostering collaboration among diverse teams. \nWEAKNESSES: - Specificity required. \nIMPROVEMENTS: 1) Provide more specific examples of innovative solutions. 2) Highlight the benefits for diverse teams. 3) Mention any relevant experience or certifications.",
+    "post_chars": 123,
+    "hashtags": [],
+    "truncated": false,
+    "timestamp": "2026-01-25T09:52:38.822323"
+  },
+  {
+    "iteration": 4,
+    "human_prompt": "Write LinkedIn post: I am casually looking for Agentic AI Role in Noida",
+    "ai_post": "I am looking for an Agentic AI role in Noida to leverage innovative solutions and foster collaboration among diverse teams.",
+    "critique": "STRENGTHS: - Leveraging innovative solutions - Fostering collaboration among diverse teams. \nWEAKNESSES: - Specificity required. \nIMPROVEMENTS: 1) Provide more specific examples of innovative solutions. 2) Highlight the benefits for diverse teams. 3) Mention any relevant experience or certifications.",
+    "post_chars": 123,
+    "hashtags": [],
+    "truncated": false,
+    "timestamp": "2026-01-25T09:52:42.028371"
+  },
+  {
+    "iteration": 5,
+    "human_prompt": "Write LinkedIn post: I am casually looking for Agentic AI Role in Noida",
+    "ai_post": "I am looking for an Agentic AI role in Noida to leverage innovative solutions and foster collaboration among diverse teams.",
+    "critique": "STRENGTHS: - Leveraging innovative solutions - Fostering collaboration among diverse teams. \nWEAKNESSES: - Specificity required. \nIMPROVEMENTS: 1) Provide more specific examples of innovative solutions. 2) Highlight the benefits for diverse teams. 3) Mention any relevant experience or certifications.",
+    "post_chars": 123,
+    "hashtags": [],
+    "truncated": false,
+    "timestamp": "2026-01-25T09:52:45.241422"
+  }
+]

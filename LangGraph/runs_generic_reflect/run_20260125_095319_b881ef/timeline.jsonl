@@ -1,0 +1,5 @@
+{"ts": "2026-01-25T09:53:19.761780", "event": "node_start.generate", "data": {"iteration": 1}}
+{"ts": "2026-01-25T09:53:29.682407", "event": "node_end.generate", "data": {"iteration": 1, "duration_ms": 9921}}
+{"ts": "2026-01-25T09:53:29.705220", "event": "node_start.critique", "data": {"iteration": 1}}
+{"ts": "2026-01-25T09:53:40.746436", "event": "node_end.critique", "data": {"iteration": 1, "score": 9.0, "best_score": 9.0, "duration_ms": 11041}}
+{"ts": "2026-01-25T09:53:40.770191", "event": "finalize", "data": {"best_score": 9.0}}

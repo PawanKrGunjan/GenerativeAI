@@ -1,18 +1,32 @@
-# ref.py
+from __future__ import annotations
+
 import json
-from pprint import pprint
+import logging
 from typing import Annotated, Dict, Any, List, Optional, Literal
 from typing_extensions import TypedDict, NotRequired
+from pathlib import Path
 
 from pydantic import BaseModel, Field
 
 from langchain_ollama import ChatOllama
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.messages import AnyMessage, HumanMessage, AIMessage
+
 from langgraph.graph import StateGraph, START, END
 from langgraph.graph.message import add_messages
 
 from langchain_community.tools import DuckDuckGoSearchResults
+
+import mlflow
+from logger_config import setup_logger
+
+
+# =============================================================================
+# MLFLOW
+# =============================================================================
+mlflow.set_tracking_uri("http://localhost:5000")
+mlflow.set_experiment("reflexion-agent")
+mlflow.langchain.autolog()
 
 
 # =============================
@@ -22,8 +36,19 @@ DEBUG = True
 PRINT_GRAPH_DEBUG_EVENTS = True
 MAX_ITERATIONS = 4
 
-MODEL_NAME = "granite4:350m" #"qwen2.5:7b"  # change if needed (e.g., "llama3.1:8b")
-llm = ChatOllama(model=MODEL_NAME, temperature=0.0)
+MODEL_NAME = "granite4:350m"
+
+# Logger (rotating file + console)
+logger = setup_logger(
+    debug_mode=DEBUG,
+    log_name="reflexion-agent",
+    log_dir="logs"
+)
+logger.info("Logger configured", extra={"status": "INFO"})
+
+
+# Use JSON mode for structured outputs to reduce parsing failures
+llm_json = ChatOllama(model=MODEL_NAME, temperature=0.0, format="json")
 
 ddg_tool = DuckDuckGoSearchResults(num_results=3)
 
@@ -31,16 +56,16 @@ ddg_tool = DuckDuckGoSearchResults(num_results=3)
 def log(title: str, obj: Any = None) -> None:
     if not DEBUG:
         return
-    print(f"\n========== {title} ==========")
-    if obj is not None:
-        if isinstance(obj, (dict, list)):
-            pprint(obj, width=120)
-        else:
-            print(obj)
+    if obj is None:
+        logger.debug(title)
+        return
+    if isinstance(obj, (dict, list)):
+        logger.debug("%s | %s", title, json.dumps(obj, ensure_ascii=False)[:4000])
+    else:
+        logger.debug("%s | %s", title, str(obj)[:4000])
 
 
 def dump_model(m: Any) -> dict:
-    # Works for pydantic v1 and v2
     if hasattr(m, "model_dump"):
         return m.model_dump()
     if hasattr(m, "dict"):
@@ -51,7 +76,6 @@ def dump_model(m: Any) -> dict:
 # =============================
 # PROMPTS
 # =============================
-# Put your long persona/system prompt here if you want.
 prompt_template = ChatPromptTemplate.from_messages(
     [
         (
@@ -108,12 +132,12 @@ class ReviseAnswer(AnswerQuestion):
 class AgentState(TypedDict):
     messages: Annotated[list[AnyMessage], add_messages]
     iterations: NotRequired[int]
-    draft: NotRequired[AnswerQuestion]
+    draft: NotRequired[Dict[str, Any]]
+    revision: NotRequired[Dict[str, Any]]
     search_results: NotRequired[Dict[str, Any]]
-    revision: NotRequired[ReviseAnswer]
 
 
-def _latest_structured(state: AgentState) -> Optional[BaseModel]:
+def _latest_structured(state: AgentState) -> Optional[Dict[str, Any]]:
     return state.get("revision") or state.get("draft")
 
 
@@ -134,17 +158,22 @@ def respond_node(state: AgentState) -> dict:
     log("NODE respond_node (messages count)", len(state["messages"]))
     log("NODE respond_node (iterations)", state.get("iterations", 0))
 
-    responder = llm.with_structured_output(AnswerQuestion)
+    responder = llm_json.with_structured_output(AnswerQuestion)
     structured: AnswerQuestion = (first_responder_prompt | responder).invoke(
         {"messages": state["messages"]}
     )
+    structured_dict = dump_model(structured)
 
-    log("Responder structured output", dump_model(structured))
+    log("Responder structured output", structured_dict)
 
-    # IMPORTANT: only put Message objects in messages
+    reflection_text = structured_dict.get("reflection", {})
+    reflection_msg = AIMessage(
+        content=f"REFLECTION: missing={reflection_text.get('missing','')} | superfluous={reflection_text.get('superfluous','')}"
+    )
+
     return {
-        "draft": structured,
-        "messages": [AIMessage(content=structured.answer)],
+        "draft": structured_dict,
+        "messages": [AIMessage(content=structured.answer), reflection_msg],
         "iterations": state.get("iterations", 0),
     }
 
@@ -153,8 +182,10 @@ def execute_tools_node(state: AgentState) -> dict:
     log("NODE execute_tools_node (iterations before)", state.get("iterations", 0))
 
     latest = _latest_structured(state)
-    queries = getattr(latest, "search_queries", []) if latest else []
-
+    queries = (latest or {}).get("search_queries", [])
+    if not isinstance(queries, list):
+        queries = []
+    queries = [str(q).strip() for q in queries if str(q).strip()][:3]
     log("Tool queries", queries)
 
     results: Dict[str, Any] = {}
@@ -164,10 +195,7 @@ def execute_tools_node(state: AgentState) -> dict:
 
     log("Tool results (raw)", results)
 
-    return {
-        "search_results": results,
-        "iterations": state.get("iterations", 0) + 1,
-    }
+    return {"search_results": results, "iterations": state.get("iterations", 0) + 1}
 
 
 def revisor_node(state: AgentState) -> dict:
@@ -180,16 +208,18 @@ def revisor_node(state: AgentState) -> dict:
         HumanMessage(content=f"External search results (JSON):\n{tool_blob}")
     ]
 
-    reviser = llm.with_structured_output(ReviseAnswer)
+    reviser = llm_json.with_structured_output(ReviseAnswer)
     revised: ReviseAnswer = (revisor_prompt | reviser).invoke({"messages": msgs})
+    revised_dict = dump_model(revised)
 
-    log("Revisor structured output", dump_model(revised))
+    log("Revisor structured output", revised_dict)
 
-    final_text = revised.answer + _render_references(revised.references)
-    return {
-        "revision": revised,
-        "messages": [AIMessage(content=final_text)],
-    }
+    refs = revised_dict.get("references", [])
+    if not isinstance(refs, list):
+        refs = []
+
+    final_text = str(revised_dict.get("answer", "")).strip() + _render_references([str(x) for x in refs])
+    return {"revision": revised_dict, "messages": [AIMessage(content=final_text)]}
 
 
 # =============================
@@ -197,8 +227,8 @@ def revisor_node(state: AgentState) -> dict:
 # =============================
 def route_after_respond(state: AgentState) -> Literal["execute_tools", "revisor"]:
     iters = state.get("iterations", 0)
-    draft = state.get("draft")
-    has_queries = bool(draft and getattr(draft, "search_queries", []))
+    draft = state.get("draft") or {}
+    has_queries = bool(draft.get("search_queries"))
     log("ROUTE after respond", {"iterations": iters, "has_queries": has_queries})
 
     if has_queries and iters < MAX_ITERATIONS:
@@ -208,8 +238,8 @@ def route_after_respond(state: AgentState) -> Literal["execute_tools", "revisor"
 
 def route_after_revisor(state: AgentState) -> Literal["execute_tools", END]:
     iters = state.get("iterations", 0)
-    rev = state.get("revision")
-    has_queries = bool(rev and getattr(rev, "search_queries", []))
+    rev = state.get("revision") or {}
+    has_queries = bool(rev.get("search_queries"))
     log("ROUTE after revisor", {"iterations": iters, "has_queries": has_queries})
 
     if has_queries and iters < MAX_ITERATIONS:
@@ -221,21 +251,14 @@ def route_after_revisor(state: AgentState) -> Literal["execute_tools", END]:
 # BUILD GRAPH
 # =============================
 builder = StateGraph(AgentState)
-
 builder.add_node("respond", respond_node)
 builder.add_node("execute_tools", execute_tools_node)
 builder.add_node("revisor", revisor_node)
 
 builder.add_edge(START, "respond")
-builder.add_conditional_edges("respond", route_after_respond, {
-    "execute_tools": "execute_tools",
-    "revisor": "revisor",
-})
+builder.add_conditional_edges("respond", route_after_respond, {"execute_tools": "execute_tools", "revisor": "revisor"})
 builder.add_edge("execute_tools", "revisor")
-builder.add_conditional_edges("revisor", route_after_revisor, {
-    "execute_tools": "execute_tools",
-    END: END,
-})
+builder.add_conditional_edges("revisor", route_after_revisor, {"execute_tools": "execute_tools", END: END})
 
 app = builder.compile()
 
@@ -250,40 +273,38 @@ if __name__ == "__main__":
     )
     input_state: AgentState = {"messages": [HumanMessage(content=question)], "iterations": 0}
 
-    # ---- Mermaid graph output
+    out_dir = Path("Graphs")
+    out_dir.mkdir(exist_ok=True)
+
     mermaid = app.get_graph().draw_mermaid()
-    print("\n================= MERMAID GRAPH (copy into Mermaid Live Editor) =================")
-    print(mermaid)
+    (out_dir / "reflexionAgent.mmd").write_text(mermaid, encoding="utf-8")
 
-    with open("reflexionAgent.mmd", "w", encoding="utf-8") as f:
-        f.write(mermaid)
-
-    # Optional PNG render (uses Mermaid rendering; may require internet depending on method)
     try:
         png_bytes = app.get_graph().draw_mermaid_png()
-        with open("reflexionAgent.png", "wb") as f:
-            f.write(png_bytes)
-        print("\nSaved reflexionAgent.png")
+        (out_dir / "reflexionAgent.png").write_bytes(png_bytes)
+        logger.info("Saved graph PNG: %s", str(out_dir / "reflexionAgent.png"))
     except Exception as e:
-        print("\nCould not render reflexionAgent.png:", repr(e))
+        logger.warning("Could not render reflexionAgent.png: %r", e)
+        logger.info("Mermaid graph:\n%s", mermaid)
 
-    # ---- LangGraph debug streaming
-    if PRINT_GRAPH_DEBUG_EVENTS:
-        print("\n================= LANGGRAPH DEBUG STREAM =================")
-        for event in app.stream(input_state, stream_mode="debug"):
-            # This can be very verbose; keep it on while learning.
-            pprint(event, width=120)
+    with mlflow.start_run(run_name="reflexion_agent_run"):
+        mlflow.log_text(question, "input/question.txt")
+        mlflow.log_artifact(str(out_dir / "reflexionAgent.mmd"), artifact_path="graph")
+        if (out_dir / "reflexionAgent.png").exists():
+            mlflow.log_artifact(str(out_dir / "reflexionAgent.png"), artifact_path="graph")
 
-    # ---- Final result
-    final_state = app.invoke(input_state)
+        if PRINT_GRAPH_DEBUG_EVENTS:
+            logger.info("LANGGRAPH DEBUG STREAM enabled")
+            for event in app.stream(input_state, stream_mode="debug"):
+                # This can be verbose; keep for learning
+                logger.debug("DEBUG_EVENT | %s", json.dumps(event, default=str)[:4000])
+
+        final_state = app.invoke(input_state)
+
+        if "draft" in final_state:
+            mlflow.log_text(json.dumps(final_state["draft"], indent=2, ensure_ascii=False), "outputs/draft.json")
+        if "revision" in final_state:
+            mlflow.log_text(json.dumps(final_state["revision"], indent=2, ensure_ascii=False), "outputs/revision.json")
 
     print("\n================= FINAL ANSWER =================")
     print(final_state["messages"][-1].content)
-
-    print("\n================= STRUCTURED OBJECTS (LEARNING) =================")
-    if "draft" in final_state:
-        print("\n--- Draft (AnswerQuestion) ---")
-        pprint(dump_model(final_state["draft"]), width=120)
-    if "revision" in final_state:
-        print("\n--- Revision (ReviseAnswer) ---")
-        pprint(dump_model(final_state["revision"]), width=120)

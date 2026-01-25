@@ -1,163 +1,182 @@
+#!/usr/bin/env python3
 from __future__ import annotations
 
+import re
 import json
-from typing import Literal, Union
+from typing import Literal, Optional, List
 
-from pydantic import BaseModel, Field, ValidationError
-from langchain_core.messages import AIMessage
+from pydantic import BaseModel, Field
+from langchain_core.tools import tool
 from langchain_ollama import ChatOllama
 
+from logger_config import setup_logger
 
-# ==========================
-# Calculator Tool Definition
-# ==========================
 
+# =========================
+# Logging
+# =========================
+logger = setup_logger(debug_mode=True, log_name="simple-llm-calc", log_dir="logs")
+logger.info("Logger configured")
+
+
+# =========================
+# Output schema (structured)
+# =========================
 OperationType = Literal[
     "add",
     "subtract",
     "multiply",
     "divide",
-    "power",          # a ** b
-    "modulus",        # a % b
-    "floor_divide",   # a // b
-    "square_root",    # sqrt(a)  (b is ignored)
-    "absolute",       # abs(a)   (b is ignored)
+    "power",
+    "modulus",
+    "floor_divide",
+    "square_root",
+    "absolute",
 ]
 
 
-class CalculatorInput(BaseModel):
-    """Input schema for all calculator operations."""
-    operation: OperationType = Field(..., description="The mathematical operation to perform")
-    a: float = Field(..., description="First operand (main number)")
-    b: float = Field(default=0.0, description="Second operand (used only when required)")
-
-
 class CalculatorOutput(BaseModel):
-    """Standardized output format."""
     result: float
-    operation_performed: str
-    input_used: CalculatorInput
-
-
-# =====================
-# Calculator Engine Class
-# =====================
-
-class MathCalculator:
-    """A clean, extensible calculator that handles dispatching based on validated input."""
-
-    @staticmethod
-    def _add(a: float, b: float) -> float:
-        return a + b
-
-    @staticmethod
-    def _subtract(a: float, b: float) -> float:
-        return a - b
-
-    @staticmethod
-    def _multiply(a: float, b: float) -> float:
-        return a * b
-
-    @staticmethod
-    def _divide(a: float, b: float) -> float:
-        if b == 0:
-            raise ValueError("Division by zero is not allowed")
-        return a / b
-
-    @staticmethod
-    def _power(a: float, b: float) -> float:
-        return a ** b
-
-    @staticmethod
-    def _modulus(a: float, b: float) -> float:
-        if b == 0:
-            raise ValueError("Modulus by zero is not allowed")
-        return a % b
-
-    @staticmethod
-    def _floor_divide(a: float, b: float) -> float:
-        if b == 0:
-            raise ValueError("Floor division by zero is not allowed")
-        return a // b
-
-    @staticmethod
-    def _square_root(a: float, _: float) -> float:
-        if a < 0:
-            raise ValueError("Square root of negative number is not supported in real domain")
-        return a ** 0.5
-
-    @staticmethod
-    def _absolute(a: float, _: float) -> float:
-        return abs(a)
-
-    @classmethod
-    def execute(cls, input_data: CalculatorInput) -> CalculatorOutput:
-        """Dispatch to the correct operation and return structured output."""
-        handlers = {
-            "add": cls._add,
-            "subtract": cls._subtract,
-            "multiply": cls._multiply,
-            "divide": cls._divide,
-            "power": cls._power,
-            "modulus": cls._modulus,
-            "floor_divide": cls._floor_divide,
-            "square_root": cls._square_root,
-            "absolute": cls._absolute,
-        }
-
-        handler = handlers[input_data.operation]
-        result = handler(input_data.a, input_data.b)
-
-        return CalculatorOutput(
-            result=result,
-            operation_performed=input_data.operation,
-            input_used=input_data,
-        )
+    operation_performed: OperationType
+    numbers: List[float] = Field(default_factory=list)
+    note: str = ""
 
 
 # =========================
-# LLM Setup with Tool Binding
+# Deterministic parsing
 # =========================
+_num_re = re.compile(r"(-?\d+(?:\.\d+)?)")
 
-model_name = "qwen2.5:3b"  # You can change this
+def extract_numbers(text: str) -> List[float]:
+    return [float(x) for x in _num_re.findall(text)]
 
-llm = ChatOllama(
-    model=model_name,
-    temperature=0.0,  # Low temperature for reliable tool calling
-)
+def detect_operation(q: str) -> OperationType:
+    s = q.lower()
 
-# Bind the single tool schema to the LLM
-calculator_llm = llm.bind_tools(tools=[CalculatorInput], tool_choice="auto")
+    if "square root" in s or "sqrt" in s:
+        return "square_root"
+    if "absolute" in s or "abs(" in s or "absolute value" in s:
+        return "absolute"
+    if "floor divide" in s or "//" in s:
+        return "floor_divide"
+    if "mod" in s or "modulus" in s or "%" in s:
+        return "modulus"
+    if "power" in s or "**" in s or "to the power" in s:
+        return "power"
+    if "divide" in s or "/" in s:
+        return "divide"
+    if "multiply" in s or "times" in s or "*" in s:
+        return "multiply"
+    if "subtract" in s or "minus" in s:
+        return "subtract"
+    return "add"
 
 
-# =====================
-# Helper Execution Function
-# =====================
+def compute(op: OperationType, nums: List[float], original: str) -> CalculatorOutput:
+    # Unary ops
+    if op in ("square_root", "absolute"):
+        if not nums:
+            raise ValueError("No number found in query.")
+        a = nums[0]
+        if op == "square_root":
+            if a < 0:
+                raise ValueError("Square root of negative number is not supported (real domain).")
+            return CalculatorOutput(result=a ** 0.5, operation_performed=op, numbers=nums)
+        return CalculatorOutput(result=abs(a), operation_performed=op, numbers=nums)
+
+    # Binary ops: need 2 numbers
+    if len(nums) < 2:
+        raise ValueError("Need two numbers for this operation.")
+
+    # Special language case: "Subtract 13 from 50" means 50 - 13
+    s = original.lower()
+    if op == "subtract" and "from" in s:
+        a, b = nums[1], nums[0]
+    else:
+        a, b = nums[0], nums[1]
+
+    if op == "add":
+        r = a + b
+    elif op == "subtract":
+        r = a - b
+    elif op == "multiply":
+        r = a * b
+    elif op == "divide":
+        if b == 0:
+            raise ValueError("Division by zero is not allowed.")
+        r = a / b
+    elif op == "power":
+        r = a ** b
+    elif op == "modulus":
+        if b == 0:
+            raise ValueError("Modulus by zero is not allowed.")
+        r = a % b
+    elif op == "floor_divide":
+        if b == 0:
+            raise ValueError("Floor division by zero is not allowed.")
+        r = a // b
+    else:
+        raise ValueError(f"Unsupported operation: {op}")
+
+    return CalculatorOutput(result=float(r), operation_performed=op, numbers=nums)
+
+
+# =========================
+# Tool: only requires "query"
+# =========================
+@tool
+def calculator(query: str) -> str:
+    """
+    Calculator tool.
+    Input: a natural-language query string.
+    Output: JSON string of CalculatorOutput.
+    """
+    logger.info("TOOL calculator | query=%s", query)
+
+    nums = extract_numbers(query)
+    op = detect_operation(query)
+    out = compute(op, nums, query)
+
+    logger.info("TOOL calculator | op=%s nums=%s result=%s", out.operation_performed, out.numbers, out.result)
+    return out.model_dump_json()
+
+
+# =========================
+# LLM tool calling
+# =========================
+MODEL_NAME = "granite4:350m"
+llm = ChatOllama(model=MODEL_NAME, temperature=0.0)
+llm_tools = llm.bind_tools([calculator])
+
 
 def run_calculation(query: str) -> CalculatorOutput:
-    """Run a natural language query through the LLM and execute the calculator."""
-    response: AIMessage = calculator_llm.invoke(query)
+    logger.info("RUN | query=%s", query)
 
-    if not response.tool_calls:
-        raise ValueError("LLM did not call the calculator tool. Response: " + response.content)
+    msg = llm_tools.invoke(
+        [
+            ("system", "You are a math assistant. Always use the calculator tool. "
+                       "Call calculator with a single argument: the user's query string."),
+            ("human", query),
+        ]
+    )
 
-    tool_call = response.tool_calls[0]
-    args = tool_call["args"]
+    tool_calls = getattr(msg, "tool_calls", None) or []
+    if not tool_calls:
+        raise ValueError(f"LLM did not call calculator. Model said: {msg.content}")
 
-    # Validate and parse input
-    try:
-        calc_input = CalculatorInput.model_validate(args)
-    except ValidationError as e:
-        raise ValueError(f"Invalid arguments from LLM: {e}")
+    # Execute first tool call (you can extend to handle multiple)
+    tc = tool_calls[0]
+    if tc.get("name") != "calculator":
+        raise ValueError(f"Unexpected tool call: {tc.get('name')}")
 
-    # Execute the operation
-    return MathCalculator.execute(calc_input)
+    args = tc.get("args", {}) or {}
+    tool_result_json = calculator.invoke(args)  # JSON string
+    return CalculatorOutput.model_validate_json(tool_result_json)
 
 
-# =====================
-# Example Usage
-# =====================
-
+# =========================
+# Example usage
+# =========================
 if __name__ == "__main__":
     examples = [
         "What is 15 plus 27?",
@@ -172,11 +191,11 @@ if __name__ == "__main__":
     ]
 
     for q in examples:
-        print(f"\nQuery: {q}")
+        print("\nQuery:", q)
         try:
-            output = run_calculation(q)
-            print(f"Result: {output.result}  ({output.operation_performed})")
-            print(f"Full output: {output.model_dump_json(indent=2)}")
+            out = run_calculation(q)
+            print("Result:", out.result, f"({out.operation_performed})")
+            print(out.model_dump_json(indent=2))
         except Exception as e:
-            print(f"Error: {e}")
-        print('=' * 100)
+            print("Error:", e)
+        print("=" * 90)

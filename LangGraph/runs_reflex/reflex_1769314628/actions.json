@@ -1,0 +1,14 @@
+[
+  {
+    "step": 0,
+    "action": "SUCK"
+  },
+  {
+    "step": 1,
+    "action": "MOVE_RIGHT"
+  },
+  {
+    "step": 2,
+    "action": "SUCK"
+  }
+]

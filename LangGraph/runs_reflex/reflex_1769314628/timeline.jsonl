@@ -1,0 +1,7 @@
+{"ts": 1769314628.612067, "event": "perceive", "data": {"step": 0, "percept": {"loc": "A", "dirty_here": true}, "env": {"loc": "A", "dirt": {"A": true, "B": true}}}}
+{"ts": 1769314628.6132662, "event": "act", "data": {"step": 0, "action": "SUCK", "env_before": {"loc": "A", "dirt": {"A": true, "B": true}}, "env_after": {"loc": "A", "dirt": {"A": false, "B": true}}}}
+{"ts": 1769314628.6140482, "event": "perceive", "data": {"step": 1, "percept": {"loc": "A", "dirty_here": false}, "env": {"loc": "A", "dirt": {"A": false, "B": true}}}}
+{"ts": 1769314628.6146405, "event": "act", "data": {"step": 1, "action": "MOVE_RIGHT", "env_before": {"loc": "A", "dirt": {"A": false, "B": true}}, "env_after": {"loc": "B", "dirt": {"A": false, "B": true}}}}
+{"ts": 1769314628.615171, "event": "perceive", "data": {"step": 2, "percept": {"loc": "B", "dirty_here": true}, "env": {"loc": "B", "dirt": {"A": false, "B": true}}}}
+{"ts": 1769314628.615708, "event": "act", "data": {"step": 2, "action": "SUCK", "env_before": {"loc": "B", "dirt": {"A": false, "B": true}}, "env_after": {"loc": "B", "dirt": {"A": false, "B": false}}}}
+{"ts": 1769314628.6162457, "event": "finalize", "data": {"steps": 3, "clean": true, "final_env": {"loc": "B", "dirt": {"A": false, "B": false}}, "best_case": "cleaned both rooms"}}

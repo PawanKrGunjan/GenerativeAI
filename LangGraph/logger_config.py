@@ -30,36 +30,36 @@ class MillisecondFormatter(logging.Formatter):
 
 def setup_logger(debug_mode: bool = True, log_name: str = "ANPR", log_dir: str = "logs") -> logging.Logger:
     Path(log_dir).mkdir(parents=True, exist_ok=True)
-    delete_old_logs(log_dir, days=3)
+    # Optional: delete_old_logs(log_dir, days=3)
 
     logger = logging.getLogger(log_name)
-    logger.setLevel(logging.DEBUG)
-    #logger.setLevel(logging.DEBUG if debug_mode else logging.WARNING)
+    logger.setLevel(logging.DEBUG if debug_mode else logging.INFO)
     logger.propagate = False
 
-    if logger.hasHandlers():
+    if logger.handlers:
         logger.handlers.clear()
-    handler_level = logging.DEBUG if debug_mode else logging.WARNING
+
+    handler_level = logging.DEBUG if debug_mode else logging.INFO
 
     formatter = MillisecondFormatter(
-        fmt='%(asctime)s %(filename_with_ext)s [%(proc_thread)s] - %(levelname)s :%(lineno)d - %(message)s',
-        datefmt='%H:%M:%S,%f'
+        fmt="%(asctime)s %(filename_with_ext)s [%(proc_thread)s] - %(levelname)s :%(lineno)d - %(message)s",
+        datefmt="%H:%M:%S,%f",
     )
-    log_file = os.path.join(log_dir, f"{log_name}.log")  # base filename
+
+    log_file = os.path.join(log_dir, f"{log_name}.log")
 
     file_handler = TimedRotatingFileHandler(
         log_file,
-        when="midnight",              # Rotate at midnight
+        when="midnight",
         interval=1,
-        backupCount=7,                # Keep logs for 7 days
-        encoding='utf-8',
+        backupCount=7,
+        encoding="utf-8",
         delay=False,
-        utc=False                     # Local time
+        utc=False,
     )
-
     file_handler.setLevel(handler_level)
     file_handler.setFormatter(formatter)
-    file_handler.suffix = "%Y-%m-%d"  # Log files will look like: ANPR.log.2025-08-04
+    file_handler.suffix = "%Y-%m-%d"
 
     console_handler = logging.StreamHandler()
     console_handler.setLevel(handler_level)
@@ -67,8 +67,8 @@ def setup_logger(debug_mode: bool = True, log_name: str = "ANPR", log_dir: str =
 
     logger.addHandler(file_handler)
     logger.addHandler(console_handler)
-
     return logger
+
 
 def delete_old_logs(log_dir: str, days: int = 3):
     now = datetime.now()

@@ -1,11 +1,34 @@
-import json
-import logging
+"""
+reactAgent.py 
+
+What it does
+- A small LangGraph "tool loop": agent -> tools -> agent -> ... -> end
+- Agent is an Ollama chat model with tool calling enabled
+- Tools included:
+  - search_tool (DuckDuckGo)
+  - calculator_tool (safe AST eval)
+  - recommend_clothing (simple rules)
+  - news_summarizer_tool (summarize DDG results)
+
+Logging
+- Uses logger_config.setup_logger()
+- Writes rotating logs to logs/react-agent.log (per your logger_config)
+
+Common gotcha fixed
+- Curly braces in ChatPromptTemplate must be escaped: {{ and }} for literal JSON examples.
+"""
+
+from __future__ import annotations
+
 import os
+import json
 import ast
 import math
 import re
+from pathlib import Path
 from typing import Annotated, Sequence, Optional, TypedDict, Any, List, Dict
 
+import mlflow
 from pydantic import BaseModel, Field
 
 from langchain_ollama import ChatOllama
@@ -17,26 +40,62 @@ from langchain_community.tools import DuckDuckGoSearchResults
 from langgraph.graph import StateGraph, START, END
 from langgraph.graph.message import add_messages
 
+from logger_config import setup_logger
 
-# ----------------------------
-# Logging setup
-# ----------------------------
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s | %(levelname)s | %(name)s | %(message)s"
+
+# =============================================================================
+# CONFIG
+# =============================================================================
+class Config:
+    DEBUG = os.getenv("DEBUG", "1") == "1"
+
+    LOG_DIR = os.getenv("LOG_DIR", "logs")
+    LOG_NAME = os.getenv("LOG_NAME", "react-agent")
+
+    GRAPH_DIR = Path(os.getenv("GRAPH_DIR", "Graphs"))
+    SAVE_GRAPH_PNG = os.getenv("SAVE_GRAPH_PNG", "1") == "1"
+
+    MLFLOW_TRACKING_URI = os.getenv("MLFLOW_TRACKING_URI", "http://localhost:5000")
+    MLFLOW_EXPERIMENT = os.getenv("MLFLOW_EXPERIMENT", "react-agent")
+
+    OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "granite4:350m")
+    TEMPERATURE = float(os.getenv("TEMPERATURE", "0.0"))
+
+    DDG_RESULTS = int(os.getenv("DDG_RESULTS", "5"))
+
+    RECURSION_LIMIT = int(os.getenv("RECURSION_LIMIT", "30"))
+
+
+# =============================================================================
+# LOGGER (logger_config)
+# =============================================================================
+logger = setup_logger(
+    debug_mode=Config.DEBUG,
+    log_name=Config.LOG_NAME,
+    log_dir=Config.LOG_DIR,
 )
-logger = logging.getLogger("react-agent")
+logger.info("Logger configured")
 
 
+# =============================================================================
+# MLFLOW
+# =============================================================================
+mlflow.set_tracking_uri(Config.MLFLOW_TRACKING_URI)
+mlflow.set_experiment(Config.MLFLOW_EXPERIMENT)
+mlflow.langchain.autolog()
+
+
+# =============================================================================
+# JSON helpers
+# =============================================================================
 def safe_json_dumps(x: Any) -> str:
-    """Always return a JSON string (fallback to str for non-serializable objects)."""
     try:
         return json.dumps(x, ensure_ascii=False)
     except TypeError:
         return json.dumps(str(x), ensure_ascii=False)
 
+
 def safe_json_loads(x: Any) -> Any:
-    """Parse JSON safely; if already a Python object, return as-is."""
     if isinstance(x, (list, dict)):
         return x
     if not isinstance(x, str):
@@ -46,10 +105,12 @@ def safe_json_loads(x: Any) -> Any:
     except Exception:
         return x
 
-# ----------------------------
-# Tools
-# ----------------------------
-ddg = DuckDuckGoSearchResults(num_results=5)
+
+# =============================================================================
+# TOOLS
+# =============================================================================
+ddg = DuckDuckGoSearchResults(num_results=Config.DDG_RESULTS)
+
 
 @tool
 def search_tool(query: str) -> str:
@@ -89,9 +150,6 @@ def recommend_clothing(input: ClothingInput) -> str:
     return "A light jacket should be fine."
 
 
-# ----------------------------
-# Calculator tool (safe AST)
-# ----------------------------
 SAFE_NAMES = {
     "pi": math.pi,
     "e": math.e,
@@ -118,8 +176,10 @@ ALLOWED_NODES = (
     ast.UAdd, ast.USub,
 )
 
+
 class UnsafeExpressionError(ValueError):
     pass
+
 
 def _validate_ast(node: ast.AST) -> None:
     for n in ast.walk(node):
@@ -134,6 +194,7 @@ def _validate_ast(node: ast.AST) -> None:
 
         if isinstance(n, ast.Name) and n.id not in SAFE_NAMES:
             raise UnsafeExpressionError(f"Unknown identifier: {n.id}")
+
 
 @tool
 def calculator_tool(expression: str) -> str:
@@ -152,9 +213,6 @@ def calculator_tool(expression: str) -> str:
         return f"Error: {e}"
 
 
-# ----------------------------
-# News summarizer tool
-# ----------------------------
 class NewsSummarizeInput(BaseModel):
     search_results_json: str = Field(..., description="JSON string returned by search_tool.")
     top_k: int = Field(3, ge=1, le=10)
@@ -209,10 +267,7 @@ def news_summarizer_tool(input: NewsSummarizeInput) -> str:
     items = _normalize_results(raw_obj)
 
     if not items:
-        return (
-            "Could not parse structured search results. "
-            "Try adjusting the query or switching search provider."
-        )
+        return "Could not parse structured search results. Try adjusting the query."
 
     top_items = items[: input.top_k]
     blocks: List[str] = []
@@ -225,38 +280,34 @@ def news_summarizer_tool(input: NewsSummarizeInput) -> str:
         date = _extract_date(snippet)
         points = _make_main_points(snippet, input.focus)
 
-        md: List[str] = []
-        md.append(f"{i}. {title}")
+        lines: List[str] = []
+        lines.append(f"{i}. {title}")
         if date:
-            md.append(f"   - Date (from snippet): {date}")
+            lines.append(f"   - Date (from snippet): {date}")
         if link:
-            md.append(f"   - Link: {link}")
+            lines.append(f"   - Link: {link}")
         if points:
-            md.append("   - Main points:")
+            lines.append("   - Main points:")
             for p in points:
-                md.append(f"     - {p}")
+                lines.append(f"     - {p}")
         else:
-            md.append("   - Main points: (not enough snippet text to extract)")
+            lines.append("   - Main points: (not enough snippet text to extract)")
 
-        blocks.append("\n".join(md))
+        blocks.append("\n".join(lines))
 
     return "Top news summaries:\n\n" + "\n\n".join(blocks)
-
 
 
 TOOLS = [search_tool, recommend_clothing, calculator_tool, news_summarizer_tool]
 TOOLS_BY_NAME = {t.name: t for t in TOOLS}
 
 
-# ----------------------------
-# Model + prompt
-# ----------------------------
-MODEL_NAME = "granite4:350m"
-llm = ChatOllama(model=MODEL_NAME, temperature=0.0)
+# =============================================================================
+# MODEL + PROMPT (IMPORTANT: escape braces {{ }} )
+# =============================================================================
+llm = ChatOllama(model=Config.OLLAMA_MODEL, temperature=Config.TEMPERATURE)
 
-prompt = ChatPromptTemplate.from_messages(
-    [
-        ("system", """
+SYSTEM_PROMPT = """
 You are a helpful assistant. Use tools when needed.
 
 Rules:
@@ -267,18 +318,23 @@ Rules:
   1) Call search_tool first.
   2) Then call news_summarizer_tool with:
      {{"search_results_json": "<output from search_tool>", "top_k": 3}}.
-"""),
+
+Return the final answer after tools finish.
+""".strip()
+
+prompt = ChatPromptTemplate.from_messages(
+    [
+        ("system", SYSTEM_PROMPT),
         MessagesPlaceholder(variable_name="messages"),
     ]
 )
 
-
 agent_runnable = prompt | llm.bind_tools(TOOLS)
 
 
-# ----------------------------
-# LangGraph state
-# ----------------------------
+# =============================================================================
+# LANGGRAPH STATE
+# =============================================================================
 class AgentState(TypedDict):
     messages: Annotated[Sequence[BaseMessage], add_messages]
 
@@ -289,29 +345,38 @@ def agent_node(state: AgentState) -> dict:
 
     response = agent_runnable.invoke({"messages": state["messages"]})
 
-    if getattr(response, "tool_calls", None):
-        logger.info("AGENT | tool_calls=%s", [tc["name"] for tc in response.tool_calls])
+    tool_calls = getattr(response, "tool_calls", None) or []
+    if tool_calls:
+        logger.info("AGENT | tool_calls=%s", [tc.get("name") for tc in tool_calls])
     else:
-        logger.info("AGENT | no tool calls; final answer ready")
+        logger.info("AGENT | no tool calls -> ready to answer")
 
     return {"messages": [response]}
 
 
 def tools_node(state: AgentState) -> dict:
     last = state["messages"][-1]
-    tool_calls = getattr(last, "tool_calls", []) or []
+    tool_calls = getattr(last, "tool_calls", None) or []
     logger.info("TOOLS | executing %d tool call(s)", len(tool_calls))
 
-    outputs = []
+    outputs: List[ToolMessage] = []
+
     for tc in tool_calls:
-        name = tc["name"]
+        name = tc.get("name")
         args = tc.get("args", {}) or {}
         tc_id = tc.get("id")
 
         logger.info("TOOLS | call name=%s args=%s", name, args)
 
+        tool_obj = TOOLS_BY_NAME.get(name)
+        if tool_obj is None:
+            err = {"error": f"Unknown tool: {name}", "tool": name, "args": args}
+            logger.error("TOOLS | %s", err)
+            outputs.append(ToolMessage(content=safe_json_dumps(err), name=str(name), tool_call_id=tc_id))
+            continue
+
         try:
-            result = TOOLS_BY_NAME[name].invoke(args)
+            result = tool_obj.invoke(args)
         except Exception as e:
             logger.exception("TOOLS | tool failed: %s", name)
             result = {"error": str(e), "tool": name, "args": args}
@@ -329,46 +394,59 @@ def tools_node(state: AgentState) -> dict:
 
 def route(state: AgentState) -> str:
     last = state["messages"][-1]
-    if getattr(last, "tool_calls", None):
-        return "tools"
-    return "end"
+    return "tools" if getattr(last, "tool_calls", None) else "end"
 
 
-builder = StateGraph(AgentState)
-builder.add_node("agent", agent_node)
-builder.add_node("tools", tools_node)
+def build_graph():
+    builder = StateGraph(AgentState)
+    builder.add_node("agent", agent_node)
+    builder.add_node("tools", tools_node)
 
-builder.add_edge(START, "agent")
-builder.add_conditional_edges("agent", route, {"tools": "tools", "end": END})
-builder.add_edge("tools", "agent")
+    builder.add_edge(START, "agent")
+    builder.add_conditional_edges("agent", route, {"tools": "tools", "end": END})
+    builder.add_edge("tools", "agent")
 
-graph = builder.compile()
+    return builder.compile()
 
 
-# ----------------------------
+# =============================================================================
 # MAIN
-# ----------------------------
+# =============================================================================
 if __name__ == "__main__":
-    os.makedirs("Graphs", exist_ok=True)
+    graph = build_graph()
+
+    Config.GRAPH_DIR.mkdir(parents=True, exist_ok=True)
+    mermaid = graph.get_graph().draw_mermaid()
+    (Config.GRAPH_DIR / "reactAgent.mmd").write_text(mermaid, encoding="utf-8")
+    logger.info("Saved graph mermaid: %s", str(Config.GRAPH_DIR / "reactAgent.mmd"))
+
+    if Config.SAVE_GRAPH_PNG:
+        try:
+            png_bytes = graph.get_graph().draw_mermaid_png()
+            (Config.GRAPH_DIR / "reactAgent.png").write_bytes(png_bytes)
+            logger.info("Saved graph PNG: %s", str(Config.GRAPH_DIR / "reactAgent.png"))
+        except Exception as e:
+            logger.warning("Graph PNG render failed: %r", e)
 
     questions = [
-        "What's the weather like in Delhi today, what should I wear",
-        "calculate 2 + 3 * 4 and sin(pi/2).",
-        "What is the latest update on Patna, Kankarbagh Sambhu Girls Hostel Case",
+        "What's the weather like in Delhi today, what should I wear?",
+        "Calculate 2 + 3 * 4 and sin(pi/2).",
+        "What is the latest update on Patna, Kankarbagh Sambhu Girls Hostel Case?",
     ]
 
-    # Mermaid graph once
-    mermaid = graph.get_graph().draw_mermaid()
-    print("\n================= MERMAID GRAPH =================")
-    print(mermaid)
-    with open("Graphs/reactAgent.mmd", "w", encoding="utf-8") as f:
-        f.write(mermaid)
+    for q in questions:
+        logger.info("QUERY | %s", q)
 
-    for user_query in questions:
-        inputs = {"messages": [HumanMessage(content=user_query)]}
+        inputs: AgentState = {"messages": [HumanMessage(content=q)]}
 
-        for event in graph.stream(inputs, stream_mode="values"):
-            msg = event["messages"][-1]
-            logger.info("STREAM | %s", type(msg).__name__)
-            if getattr(msg, "content", None):
-                print(f"\n--- {type(msg).__name__} ---\n{msg.content}")
+        # One clean run (invoke). If you want step-by-step, you can switch to stream().
+        final_state = graph.invoke(inputs, config={"recursion_limit": Config.RECURSION_LIMIT})
+        final_msg = final_state["messages"][-1]
+
+        logger.info("FINAL_MESSAGE_TYPE | %s", type(final_msg).__name__)
+        logger.info("FINAL_CONTENT | %s", getattr(final_msg, "content", "")[:2000])
+
+        print("\n" + "=" * 80)
+        print("USER:", q)
+        print("-" * 80)
+        print(getattr(final_msg, "content", ""))
