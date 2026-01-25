@@ -1,0 +1,39 @@
+09:52:30,302 reflectionAgent.py [MainThread] - INFO :64 - Logger configured
+09:52:30,699 reflectionAgent.py [MainThread] - INFO :153 - run_start | {"session_id": "reflect_20260125_095230_ddd1c3", "trace_id": "d5f65123a0", "max_chars": 160}
+09:52:31,434 reflectionAgent.py [MainThread] - INFO :153 - node_start.generate | {"state": {"iteration": 0, "messages_len": 1, "trace_id": "d5f65123a0", "session_id": "reflect_20260125_095230_ddd1c3"}}
+09:52:31,434 reflectionAgent.py [MainThread] - INFO :153 - model_call.generate | {"iteration": 1, "max_chars": 160}
+09:52:32,264 reflectionAgent.py [MainThread] - INFO :153 - node_end.generate | {"duration_ms": 830, "iteration": 1, "post_chars": 78}
+09:52:32,274 reflectionAgent.py [MainThread] - INFO :153 - node_start.reflect | {"state": {"iteration": 1, "messages_len": 2, "trace_id": "d5f65123a0", "session_id": "reflect_20260125_095230_ddd1c3"}}
+09:52:32,274 reflectionAgent.py [MainThread] - INFO :153 - model_call.reflect | {"iteration": 1, "post_chars": 78}
+09:52:34,287 reflectionAgent.py [MainThread] - INFO :153 - node_end.reflect | {"duration_ms": 2013, "iteration": 1}
+09:52:34,288 reflectionAgent.py [MainThread] - INFO :153 - route_decision | {"iteration": 1, "max": 5, "decision": "generate"}
+09:52:34,309 reflectionAgent.py [MainThread] - INFO :153 - node_start.generate | {"state": {"iteration": 1, "messages_len": 3, "trace_id": "d5f65123a0", "session_id": "reflect_20260125_095230_ddd1c3"}}
+09:52:34,309 reflectionAgent.py [MainThread] - INFO :153 - model_call.generate | {"iteration": 2, "max_chars": 160}
+09:52:36,234 reflectionAgent.py [MainThread] - INFO :153 - node_end.generate | {"duration_ms": 1924, "iteration": 2, "post_chars": 160}
+09:52:36,246 reflectionAgent.py [MainThread] - INFO :153 - node_start.reflect | {"state": {"iteration": 2, "messages_len": 4, "trace_id": "d5f65123a0", "session_id": "reflect_20260125_095230_ddd1c3"}}
+09:52:36,246 reflectionAgent.py [MainThread] - INFO :153 - model_call.reflect | {"iteration": 2, "post_chars": 160}
+09:52:37,864 reflectionAgent.py [MainThread] - INFO :153 - node_end.reflect | {"duration_ms": 1619, "iteration": 2}
+09:52:37,865 reflectionAgent.py [MainThread] - INFO :153 - route_decision | {"iteration": 2, "max": 5, "decision": "generate"}
+09:52:37,888 reflectionAgent.py [MainThread] - INFO :153 - node_start.generate | {"state": {"iteration": 2, "messages_len": 5, "trace_id": "d5f65123a0", "session_id": "reflect_20260125_095230_ddd1c3"}}
+09:52:37,888 reflectionAgent.py [MainThread] - INFO :153 - model_call.generate | {"iteration": 3, "max_chars": 160}
+09:52:38,822 reflectionAgent.py [MainThread] - INFO :153 - node_end.generate | {"duration_ms": 935, "iteration": 3, "post_chars": 123}
+09:52:38,835 reflectionAgent.py [MainThread] - INFO :153 - node_start.reflect | {"state": {"iteration": 3, "messages_len": 6, "trace_id": "d5f65123a0", "session_id": "reflect_20260125_095230_ddd1c3"}}
+09:52:38,835 reflectionAgent.py [MainThread] - INFO :153 - model_call.reflect | {"iteration": 3, "post_chars": 123}
+09:52:41,007 reflectionAgent.py [MainThread] - INFO :153 - node_end.reflect | {"duration_ms": 2171, "iteration": 3}
+09:52:41,008 reflectionAgent.py [MainThread] - INFO :153 - route_decision | {"iteration": 3, "max": 5, "decision": "generate"}
+09:52:41,030 reflectionAgent.py [MainThread] - INFO :153 - node_start.generate | {"state": {"iteration": 3, "messages_len": 7, "trace_id": "d5f65123a0", "session_id": "reflect_20260125_095230_ddd1c3"}}
+09:52:41,031 reflectionAgent.py [MainThread] - INFO :153 - model_call.generate | {"iteration": 4, "max_chars": 160}
+09:52:42,028 reflectionAgent.py [MainThread] - INFO :153 - node_end.generate | {"duration_ms": 998, "iteration": 4, "post_chars": 123}
+09:52:42,040 reflectionAgent.py [MainThread] - INFO :153 - node_start.reflect | {"state": {"iteration": 4, "messages_len": 8, "trace_id": "d5f65123a0", "session_id": "reflect_20260125_095230_ddd1c3"}}
+09:52:42,040 reflectionAgent.py [MainThread] - INFO :153 - model_call.reflect | {"iteration": 4, "post_chars": 123}
+09:52:44,216 reflectionAgent.py [MainThread] - INFO :153 - node_end.reflect | {"duration_ms": 2177, "iteration": 4}
+09:52:44,217 reflectionAgent.py [MainThread] - INFO :153 - route_decision | {"iteration": 4, "max": 5, "decision": "generate"}
+09:52:44,244 reflectionAgent.py [MainThread] - INFO :153 - node_start.generate | {"state": {"iteration": 4, "messages_len": 9, "trace_id": "d5f65123a0", "session_id": "reflect_20260125_095230_ddd1c3"}}
+09:52:44,244 reflectionAgent.py [MainThread] - INFO :153 - model_call.generate | {"iteration": 5, "max_chars": 160}
+09:52:45,241 reflectionAgent.py [MainThread] - INFO :153 - node_end.generate | {"duration_ms": 998, "iteration": 5, "post_chars": 123}
+09:52:45,256 reflectionAgent.py [MainThread] - INFO :153 - node_start.reflect | {"state": {"iteration": 5, "messages_len": 10, "trace_id": "d5f65123a0", "session_id": "reflect_20260125_095230_ddd1c3"}}
+09:52:45,257 reflectionAgent.py [MainThread] - INFO :153 - model_call.reflect | {"iteration": 5, "post_chars": 123}
+09:52:47,436 reflectionAgent.py [MainThread] - INFO :153 - node_end.reflect | {"duration_ms": 2181, "iteration": 5}
+09:52:47,438 reflectionAgent.py [MainThread] - INFO :153 - route_decision | {"iteration": 5, "max": 5, "decision": "__end__"}
+09:52:47,528 reflectionAgent.py [MainThread] - INFO :153 - run_end | {"iteration": 5, "messages_len": 11}
+09:52:47,529 reflectionAgent.py [MainThread] - INFO :153 - files_saved | {"full_state": "runs/reflect_20260125_095230_ddd1c3/full_state.json", "iterations": "runs/reflect_20260125_095230_ddd1c3/iterations.json", "best_post": "runs/reflect_20260125_095230_ddd1c3/best_post.txt", "run_dir": "runs/reflect_20260125_095230_ddd1c3"}

@@ -1,0 +1,10 @@
+09:47:08,147 reflexAgent.py [MainThread] - INFO :27 - Logger configured
+09:47:08,512 reflexAgent.py [MainThread] - INFO :224 - RUN_START | run_id=reflex_1769314628 | run_dir=runs_reflex/reflex_1769314628
+09:47:08,611 reflexAgent.py [MainThread] - INFO :120 - PERCEIVE | step=0 | percept={'loc': 'A', 'dirty_here': True}
+09:47:08,613 reflexAgent.py [MainThread] - INFO :140 - ACT | step=0 | action=SUCK | done=False | env_before={'loc': 'A', 'dirt': {'A': True, 'B': True}} | env_after={'loc': 'A', 'dirt': {'A': False, 'B': True}}
+09:47:08,613 reflexAgent.py [MainThread] - INFO :120 - PERCEIVE | step=1 | percept={'loc': 'A', 'dirty_here': False}
+09:47:08,614 reflexAgent.py [MainThread] - INFO :140 - ACT | step=1 | action=MOVE_RIGHT | done=False | env_before={'loc': 'A', 'dirt': {'A': False, 'B': True}} | env_after={'loc': 'B', 'dirt': {'A': False, 'B': True}}
+09:47:08,615 reflexAgent.py [MainThread] - INFO :120 - PERCEIVE | step=2 | percept={'loc': 'B', 'dirty_here': True}
+09:47:08,615 reflexAgent.py [MainThread] - INFO :140 - ACT | step=2 | action=SUCK | done=True | env_before={'loc': 'B', 'dirt': {'A': False, 'B': True}} | env_after={'loc': 'B', 'dirt': {'A': False, 'B': False}}
+09:47:08,616 reflexAgent.py [MainThread] - INFO :164 - FINAL | {'steps': 3, 'clean': True, 'final_env': {'loc': 'B', 'dirt': {'A': False, 'B': False}}, 'best_case': 'cleaned both rooms'}
+09:47:08,681 reflexAgent.py [MainThread] - INFO :256 - RUN_END | run_id=reflex_1769314628 | steps=3 | clean=True

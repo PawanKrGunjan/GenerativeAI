@@ -30,7 +30,7 @@ venv
 *.pkl
 *.bin
 *.pdf
-logs
+
 models
 course
 Course

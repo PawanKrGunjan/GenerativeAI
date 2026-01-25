@@ -1,0 +1,25 @@
+10:00:19,811 simple_llm_calc.py [MainThread] - INFO :19 - Logger configured
+10:00:19,866 simple_llm_calc.py [MainThread] - INFO :153 - RUN | query=What is 15 plus 27?
+10:00:20,836 simple_llm_calc.py [MainThread] - INFO :134 - TOOL calculator | query=15 plus 27
+10:00:20,836 simple_llm_calc.py [MainThread] - INFO :140 - TOOL calculator | op=add nums=[15.0, 27.0] result=42.0
+10:00:20,842 simple_llm_calc.py [MainThread] - INFO :153 - RUN | query=Subtract 13 from 50
+10:00:21,219 simple_llm_calc.py [MainThread] - INFO :153 - RUN | query=Multiply 8 by 9
+10:00:21,954 simple_llm_calc.py [MainThread] - INFO :134 - TOOL calculator | query=8 * 9
+10:00:21,954 simple_llm_calc.py [MainThread] - INFO :140 - TOOL calculator | op=multiply nums=[8.0, 9.0] result=72.0
+10:00:21,954 simple_llm_calc.py [MainThread] - INFO :153 - RUN | query=Divide 100 by 4
+10:00:22,771 simple_llm_calc.py [MainThread] - INFO :134 - TOOL calculator | query=Divide 100 by 4
+10:00:22,771 simple_llm_calc.py [MainThread] - INFO :140 - TOOL calculator | op=divide nums=[100.0, 4.0] result=25.0
+10:00:22,771 simple_llm_calc.py [MainThread] - INFO :153 - RUN | query=What is 5 to the power of 3?
+10:00:23,589 simple_llm_calc.py [MainThread] - INFO :134 - TOOL calculator | query=5 to the power of 3
+10:00:23,589 simple_llm_calc.py [MainThread] - INFO :140 - TOOL calculator | op=power nums=[5.0, 3.0] result=125.0
+10:00:23,590 simple_llm_calc.py [MainThread] - INFO :153 - RUN | query=What is 17 mod 5?
+10:00:24,321 simple_llm_calc.py [MainThread] - INFO :134 - TOOL calculator | query=17 mod 5
+10:00:24,321 simple_llm_calc.py [MainThread] - INFO :140 - TOOL calculator | op=modulus nums=[17.0, 5.0] result=2.0
+10:00:24,321 simple_llm_calc.py [MainThread] - INFO :153 - RUN | query=Floor divide 20 by 6
+10:00:25,141 simple_llm_calc.py [MainThread] - INFO :134 - TOOL calculator | query=Floor divide 20 by 6
+10:00:25,141 simple_llm_calc.py [MainThread] - INFO :140 - TOOL calculator | op=floor_divide nums=[20.0, 6.0] result=3.0
+10:00:25,141 simple_llm_calc.py [MainThread] - INFO :153 - RUN | query=Square root of 144
+10:00:25,903 simple_llm_calc.py [MainThread] - INFO :134 - TOOL calculator | query=square root of 144
+10:00:25,903 simple_llm_calc.py [MainThread] - INFO :140 - TOOL calculator | op=square_root nums=[144.0] result=12.0
+10:00:25,904 simple_llm_calc.py [MainThread] - INFO :153 - RUN | query=Absolute value of -42
+10:00:26,559 simple_llm_calc.py [MainThread] - INFO :134 - TOOL calculator | query=-42

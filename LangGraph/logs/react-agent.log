@@ -1,0 +1,35 @@
+09:54:14,551 reactAgent.py [MainThread] - INFO :77 - Logger configured
+09:54:14,887 reactAgent.py [MainThread] - INFO :421 - Saved graph mermaid: Graphs/reactAgent.mmd
+09:54:16,238 reactAgent.py [MainThread] - INFO :427 - Saved graph PNG: Graphs/reactAgent.png
+09:54:16,238 reactAgent.py [MainThread] - INFO :438 - QUERY | What's the weather like in Delhi today, what should I wear?
+09:54:16,306 reactAgent.py [MainThread] - INFO :344 - AGENT | last_message_type=HumanMessage
+09:54:19,284 reactAgent.py [MainThread] - INFO :350 - AGENT | tool_calls=['search_tool']
+09:54:19,306 reactAgent.py [MainThread] - INFO :360 - TOOLS | executing 1 tool call(s)
+09:54:19,307 reactAgent.py [MainThread] - INFO :369 - TOOLS | call name=search_tool args={'query': 'weather in Delhi'}
+09:54:25,649 reactAgent.py [MainThread] - INFO :344 - AGENT | last_message_type=ToolMessage
+09:54:26,930 reactAgent.py [MainThread] - INFO :352 - AGENT | no tool calls -> ready to answer
+09:54:26,984 reactAgent.py [MainThread] - INFO :446 - FINAL_MESSAGE_TYPE | AIMessage
+09:54:26,984 reactAgent.py [MainThread] - INFO :447 - FINAL_CONTENT | 
+09:54:26,985 reactAgent.py [MainThread] - INFO :438 - QUERY | Calculate 2 + 3 * 4 and sin(pi/2).
+09:54:26,986 reactAgent.py [MainThread] - INFO :344 - AGENT | last_message_type=HumanMessage
+09:54:28,569 reactAgent.py [MainThread] - INFO :350 - AGENT | tool_calls=['calculator_tool', 'calculator_tool']
+09:54:28,590 reactAgent.py [MainThread] - INFO :360 - TOOLS | executing 2 tool call(s)
+09:54:28,590 reactAgent.py [MainThread] - INFO :369 - TOOLS | call name=calculator_tool args={'expression': '2 + 3 * 4'}
+09:54:28,601 reactAgent.py [MainThread] - INFO :369 - TOOLS | call name=calculator_tool args={'expression': 'sin(pi/2)'}
+09:54:28,622 reactAgent.py [MainThread] - INFO :344 - AGENT | last_message_type=ToolMessage
+09:54:29,692 reactAgent.py [MainThread] - INFO :352 - AGENT | no tool calls -> ready to answer
+09:54:29,744 reactAgent.py [MainThread] - INFO :446 - FINAL_MESSAGE_TYPE | AIMessage
+09:54:29,744 reactAgent.py [MainThread] - INFO :447 - FINAL_CONTENT | The result of 2 + 3 * 4 is **14**, and the sine of π/2 is approximately **1.0**.
+09:54:29,744 reactAgent.py [MainThread] - INFO :438 - QUERY | What is the latest update on Patna, Kankarbagh Sambhu Girls Hostel Case?
+09:54:29,746 reactAgent.py [MainThread] - INFO :344 - AGENT | last_message_type=HumanMessage
+09:54:31,125 reactAgent.py [MainThread] - INFO :350 - AGENT | tool_calls=['search_tool']
+09:54:31,146 reactAgent.py [MainThread] - INFO :360 - TOOLS | executing 1 tool call(s)
+09:54:31,146 reactAgent.py [MainThread] - INFO :369 - TOOLS | call name=search_tool args={'query': 'Patna, Kankarbagh Sambhu Girls Hostel case latest update'}
+09:54:37,521 reactAgent.py [MainThread] - INFO :344 - AGENT | last_message_type=ToolMessage
+09:54:41,564 reactAgent.py [MainThread] - INFO :352 - AGENT | no tool calls -> ready to answer
+09:54:41,614 reactAgent.py [MainThread] - INFO :446 - FINAL_MESSAGE_TYPE | AIMessage
+09:54:41,614 reactAgent.py [MainThread] - INFO :447 - FINAL_CONTENT | The latest update on the Patna, Kankarbagh Sambhu Girls Hostel case is:
+
+Patna NEET Student Death Case: The Special Investigation Team (SIT) has completed its initial investigation into the death of the NEET student. The report, prepared after seven days of intensive investigation, details every aspect of the case.
+
+The police initially gave the case a different angle but later admitted that there may be sexual assault involved in the deaths of students at Patna Girls Hostel.
