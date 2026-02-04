@@ -50,8 +50,8 @@ class Config:
     OLLAMA_MODEL = os.getenv("OLLAMA_MODEL","granite4:350m") # "llama3.1:8b")
     TEMPERATURE = float(os.getenv("TEMPERATURE", "0.0"))
     DDG_RESULTS = int(os.getenv("DDG_RESULTS", "5"))
-    CHECKPOINT_DB = os.getenv("CHECKPOINT_DB", "invest_agent_checkpoints.sqlite")
-    MASTER_STOCK_FILE = os.getenv("MASTER_STOCK_FILE", "all_nse_stocks.json")
+    CHECKPOINT_DB = os.getenv("CHECKPOINT_DB", "data/invest_agent_checkpoints.sqlite")
+    MASTER_STOCK_FILE = os.getenv("MASTER_STOCK_FILE", "data/all_nse_stocks.json")
 
     DEBUG = os.getenv("AGENT_DEBUG", "0") == "1"   # 1=ON, 0=OFF
 
@@ -864,4 +864,13 @@ def run_chat():
         print("\nBot:\n" + render_response(out.get("final", {})))
 
 if __name__ == "__main__":
+    import argparse, os
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--debug", action="store_true")
+    args = parser.parse_args()
+
+    if args.debug:
+        os.environ["AGENT_DEBUG"] = "1"
+
     run_chat()
