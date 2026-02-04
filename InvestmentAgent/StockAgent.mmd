@@ -1,0 +1,27 @@
+---
+config:
+  flowchart:
+    curve: linear
+---
+graph TD;
+	__start__([<p>__start__</p>]):::first
+	resolve_symbol(resolve_symbol)
+	fetch_stock(fetch_stock)
+	fetch_news(fetch_news)
+	write_answer(write_answer)
+	resolve_intent(resolve_intent)
+	fetch_extras(fetch_extras)
+	compute_metrics(compute_metrics)
+	__end__([<p>__end__</p>]):::last
+	__start__ --> resolve_symbol;
+	compute_metrics --> fetch_news;
+	fetch_extras --> compute_metrics;
+	fetch_news --> write_answer;
+	fetch_stock -.-> fetch_extras;
+	fetch_stock -.-> write_answer;
+	resolve_intent --> fetch_stock;
+	resolve_symbol --> resolve_intent;
+	write_answer --> __end__;
+	classDef default fill:#f2f0ff,line-height:1.2
+	classDef first fill-opacity:0
+	classDef last fill:#bfb6fc
