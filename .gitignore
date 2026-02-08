@@ -35,5 +35,9 @@ models
 course
 Course
 .ipynb_checkpoints
-Data
+data
 chroma_movie_db
+IceBreaker
+Data
+storage
+
