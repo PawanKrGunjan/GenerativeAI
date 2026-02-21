@@ -23,6 +23,7 @@ TestResults.xml
 
 Untitled.ipynb
 .env
+.idea
 test.py
 RAG APP
 __pycache__
