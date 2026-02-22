@@ -1,0 +1,11 @@
+2026-02-22 09:33:41 [INFO] Logger initialized (file=logs/agent_memory_PawanGunjan_20260222_093341.log)
+2026-02-22 09:33:41 [INFO] Model=llama3.2:3b
+2026-02-22 09:33:41 [INFO] Session thread_id=PawanGunjan:20260222_093341:5836279c
+2026-02-22 09:33:41 [INFO] SQLite connected: agent_state.db
+2026-02-22 09:33:41 [INFO] SqliteSaver ready
+2026-02-22 09:33:41 [INFO] Ensured table: user_facts
+2026-02-22 09:33:41 [INFO] Graph compiled
+2026-02-22 09:33:41 [INFO] ────────────────────────────────────────────────────────────
+2026-02-22 09:33:41 [INFO] ────────────────────────────────────────────────────────────
+2026-02-22 09:34:11 [INFO] Exit command received
+2026-02-22 09:34:11 [INFO] SQLite connection closed

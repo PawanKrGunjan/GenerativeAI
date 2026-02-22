@@ -1,0 +1,58 @@
+2026-02-22 09:20:58 [INFO] Logger initialized (file=logs/agent_memory_PawanGunjan_20260222_092058.log)
+2026-02-22 09:20:58 [INFO] Model=llama3.2:3b
+2026-02-22 09:20:58 [INFO] Session thread_id=PawanGunjan:20260222_092058:90f2f8a7
+2026-02-22 09:20:58 [INFO] SQLite connected: agent_state.db
+2026-02-22 09:20:58 [INFO] SqliteSaver ready
+2026-02-22 09:20:58 [INFO] Ensured table: user_facts
+2026-02-22 09:20:58 [INFO] Graph compiled
+2026-02-22 09:20:58 [INFO] ────────────────────────────────────────────────────────────
+2026-02-22 09:20:58 [INFO] ────────────────────────────────────────────────────────────
+2026-02-22 09:21:26 [INFO] User: Write a brief introductions about myself.
+2026-02-22 09:21:42 [INFO] AI: I'd be happy to write a brief introduction about you!
+
+My name is Pawan Gunjan, and I am a resident of Noida. I hail from the beautiful state of Bihar, where I grew up surrounded by rich cultural heritage and traditions.
+
+As for my profession, I work in the field of Artificial Intelligence and Machine Learning, which has been a fascinating area of interest for me. With a strong passion for innovation and technology, I am always looking to explore new opportunities and challenges in this dynamic field.
+
+That's a brief introduction about myself!
+2026-02-22 09:23:03 [INFO] User: Add My experiences and projects and brief educational details in my introductions
+2026-02-22 09:23:32 [INFO] AI: Here is an updated introduction that includes your experiences, projects, and educational background:
+
+Hello, I'm Pawan Gunjan, a resident of Noida with a strong passion for Artificial Intelligence and Machine Learning. Born and raised in the beautiful state of Bihar, I have always been fascinated by the intersection of technology and innovation.
+
+Professionally, I work in the field of AI and ML, where I have had the opportunity to work on various projects that have allowed me to apply my skills and knowledge to real-world problems. Some of my notable experiences include [insert brief descriptions of your experiences and projects here]. These projects have not only helped me develop a deeper understanding of AI and ML but also given me hands-on experience in applying these technologies to drive business value.
+
+In terms of education, I hold a degree in [insert degree] from [insert university name], where I was exposed to a wide range of courses that laid the foundation for my future career in AI and ML. My academic background has provided me with a solid understanding of computer science fundamentals, data structures, algorithms, and software engineering.
+
+Throughout my journey, I have been driven by a desire to stay up-to-date with the latest developments in AI and ML, and to explore new opportunities that align with my interests and skills. With a strong foundation in AI and ML, I am excited to continue learning, growing, and contributing to the field in meaningful ways.
+
+That's a brief overview of who I am, what I do, and where I've been!
+2026-02-22 09:28:35 [INFO] User: I have completed B.Tech in Mechanical Engineering from Punjab Technical University. After that I have chnged my interest in AI and Machine learning, for that I have completed verious coursed in like 
+- IBM RAG and Agentic AI⁠, IBM
+
+-Complete Machine Learning & Data Science Program⁠
+GeeksforGeeks
+
+-Data Structures & Algorithms in Python⁠
+GeeksforGeeks
+
+- Python For Data Science AI & Development⁠
+, IBM
+2026-02-22 09:29:22 [INFO] AI: Here is the updated introduction:
+
+Hello, I'm Pawan Gunjan, a resident of Noida with a strong passion for Artificial Intelligence and Machine Learning. Born and raised in the beautiful state of Bihar, I have always been fascinated by the intersection of technology and innovation.
+
+Professionally, I work in the field of AI and ML, where I have had the opportunity to work on various projects that have allowed me to apply my skills and knowledge to real-world problems. Some of my notable experiences include [insert brief descriptions of your experiences and projects here]. These projects have not only helped me develop a deeper understanding of AI and ML but also given me hands-on experience in applying these technologies to drive business value.
+
+Before diving into the world of AI and ML, I completed my Bachelor's degree in Mechanical Engineering from Punjab Technical University. However, as I delved deeper into the field, I realized that my true passion lay elsewhere. To shift my focus, I pursued various courses and certifications in AI and ML, including:
+
+* IBM RAG and Agentic AI
+* Complete Machine Learning & Data Science Program (online course)
+* Data Structures & Algorithms in Python (GeeksforGeeks)
+* Python For Data Science AI & Development (IBM)
+
+These courses not only helped me build a strong foundation in AI and ML but also provided me with the skills and knowledge necessary to excel in this field. Throughout my journey, I have been driven by a desire to stay up-to-date with the latest developments in AI and ML, and to explore new opportunities that align with my interests and skills.
+
+With a solid educational background in Mechanical Engineering and a strong foundation in AI and ML, I am excited to continue learning, growing, and contributing to the field in meaningful ways.
+2026-02-22 09:30:00 [INFO] Exit command received
+2026-02-22 09:30:00 [INFO] SQLite connection closed

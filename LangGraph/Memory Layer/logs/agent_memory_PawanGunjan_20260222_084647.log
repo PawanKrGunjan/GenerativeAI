@@ -1,0 +1,216 @@
+2026-02-22 08:46:47 [INFO] Logger initialized (file=logs/agent_memory_PawanGunjan_20260222_084647.log)
+2026-02-22 08:46:47 [INFO] Model=llama3.2:3b
+2026-02-22 08:46:47 [INFO] Session thread_id=PawanGunjan:20260222_084647:937e4734
+2026-02-22 08:46:47 [INFO] SQLite connected: agent_state.db
+2026-02-22 08:46:47 [INFO] SqliteSaver ready
+2026-02-22 08:46:47 [INFO] Ensured table: user_facts
+2026-02-22 08:46:47 [INFO] Graph compiled
+2026-02-22 08:46:48 [INFO] Saved graph visualization: graphs/agent_graph_latest.md, graphs/agent_graph_latest.png
+2026-02-22 08:46:48 [INFO] ────────────────────────────────────────────────────────────
+2026-02-22 08:46:48 [INFO] ────────────────────────────────────────────────────────────
+2026-02-22 08:54:38 [INFO] User: Pawan Kumar Gunjan
+AI/ML Developer | Generative AI | Agentic AI
+pawankumargunjan@hotmail.com
+Noida, UP
+AI/​ML Developer with 3+ years of experience in Generative AI,
+Applied NLP, and Computer Vision. Specialized in
+Transformers, Multimodal LLMs, Vector Databases, and
+Agentic AI systems, with hands-on experience building
+chatbots, voice bots, OCR pipelines, computer vision
+solutions, and intelligent automation. Proven ability to take
+ideas from research to fine-tuning and production
+deployment using LangChain, LlamaIndex, HuggingFace, FAISS/​ChromaDB, and modern AI agent frameworks.
+
+Technical Experience
+Software Developer - AI/ML, Metro Infrasys
+08/2024 | Delhi, India
+Developed and deployed end-to-end ANPR and ATCC
+systems, covering data preparation, model training,
+inference pipelines, and production rollout.
+Built high-performance APIs using FastAPI, integrated
+with Dockerized MLOps workflows for scalable and
+efficient deployment.
+•
+•
+TCE (AI & Machine Learning), GeeksForGeeks⁠
+12/2022 – 07/2024 | Noida, In
+Works of various projects on Generative AI, NLP, Deep
+Learning and Computer Vision domain.
+Subject Matter Expert (Mathematics), Evelyn Learning⁠
+02/2020 – 06/2020 | Noida, India
+Operation Research, Magicpin⁠
+03/2019 – 12/2019 | Gurgaon, India
+
+Projects
+Inventment Agent⁠
+01/2026 – Present
+Built an AI stock research agent that maps natural-
+language queries to NSE-listed equities, fetches live quotes
+and recent news, and outputs both structured JSON and a
+CLI-friendly report
+Implemented web/​news retrieval via
+DuckDuckGoSearchAPIWrapper, returning structured
+results (title, link, snippet) for downstream ranking/​
+summarization
+Added LLM-based entity extraction + deterministic NSE
+symbol resolution using a master symbol list and scoring,
+with an ambiguity flow to request user confirmation on
+low confidence
+Built an NSE market-data layer using nsepython (nse_eq)
+with fallbacks, error handling, and normalization to a
+stable response schema
+Orchestrated the pipeline as a LangGraph StateGraph
+(resolve symbol → fetch quote → fetch news → generate
+response) and persisted state with SqliteSaver
+checkpointing for resume/​replay via thread id.
+
+Movie Recommendation System⁠
+12/2025 – 01/2026
+Built a persistent content-based movie recommender
+using ChromaDB PersistentClient, storing embeddings on
+disk to reuse the vector index across runs
+Implemented an embedding pipeline with
+SentenceTransformerEmbeddingFunction("all-MiniLM-L6-
+v2") over title/​overview/​genres/​keywords for semantic
+similarity search
+Created Chroma collection advanced_movie_search with
+HNSW ANN indexing and cosine space (metadata=
+{"hnsw:space":"cosine"}) for fast top-k retrieval
+Added idempotent bootstrap (collection.count()>0) to
+ingest data only on first run; subsequent runs start without
+recomputation
+Enforced ingestion quality checks (drop null/​empty titles
+and low-signal records) to reduce index noise and improve
+retrieval precision
+Delivered a CLI search layer supporting semantic queries
+plus structured filters (genre, language, region, rating
+threshold, year range), including an interactive “live chat”
+loop that returns top-N matches with similarity scores.
+
+Automatic Number Plate Recognition (ANPR)⁠ ,
+License Plate Recognition (LPR)
+07/2024 – 08/2024
+Plate Detection with YOLOv8: Leveraged YOLOv8 for highly
+accurate and efficient license plate detection in diverse
+conditions.
+TrOCR Model: Fine-tuned the Transformer based OCR
+model to excel in recognizing characters on license plates,
+achieving an outstanding 98% accuracy.
+Impressive Accuracy: Achieved a 98% accuracy rate, even
+in challenging real-world conditions.
+•
+•
+•
+Intelligent Voice Bot⁠
+Convert Input audio to text using speech recognizations or
+whisper
+Provide converted text input with previous history to llm
+with suitable prompt.
+Converted received output to output audio using gtts
+Added audio classification to stop with the excite words
+•
+•
+•
+•
+Meal Grocery Planner⁠
+Built a multi-agent AI meal planning and grocery
+management system using CrewAI with structured
+Pydantic outputs.
+Orchestrated specialized agents for recipe research,
+shopping list generation, budget optimization, leftover
+management, and report compilation.
+Implemented an end-to-end budget-aware workflow
+that generates meal plans, categorized grocery lists, cost
+estimates, and a final user-friendly planning guide.
+
+Programming Languages & Frameworks
+•
+•
+Github
+Programming Languages: Python, Basic R, HTML, CSS
+Agentic AI : LangGraph, CrewAI, BeeAI, AutoGen
+RAG : LangChain, LlamaIndex
+Vector Databases: FAISS, ChromaDB
+Embeddings: Hugging Face Sentence-Transformers,
+OpenAI Embeddings, Ollama (nomic-embed-text)
+LLMs : Hugging Face, OpenAI, Gemini, Ollama
+NLP: NLTK, SpaCy, Gensim, Word2Vec
+Machine Learning & Deep Learning: Scikit-learn,
+Statsmodels, PyTorch, TensorFlow, Keras
+Computer Vision: OpenCV, Pillow, LabelImg, Ultralytics,
+YOLO
+Data Analysis & Visualization: Pandas, NumPy, Matplotlib
+MLOps & Model Serving: MLflow, ONNX, Docker
+Web Development & APIs: FastAPI, Django (Basic)
+Cloud Platforms: AWS, Databricks
+2026-02-22 08:55:14 [INFO] AI: Hello PawanGunjan!
+
+I can provide you with information about yourself based on the profile you've shared. Here are some details:
+
+* **Name:** Your full name is Pawan Kumar Gunjan.
+* **Location:** You live in Noida, UP, India.
+* **Profession:** You work as an AI/ML Developer specializing in Generative AI, Agentic AI, and Applied NLP.
+
+If you'd like to know more about your background or experience, I can try to help with that as well. Just let me know what specific information you're looking for!
+2026-02-22 08:55:56 [INFO] User: Tell me about my experiences.
+2026-02-22 08:57:23 [INFO] AI: Based on the profile you've shared, here are some details about your experiences:
+
+**Work Experience:**
+
+* **Software Developer - AI/ML, Metro Infrasys (08/2024 - Present)**: You developed and deployed end-to-end ANPR and ATCC systems, covering data preparation, model training, inference pipelines, and production rollout. You also built high-performance APIs using FastAPI and integrated with Dockerized MLOps workflows for scalable and efficient deployment.
+* **Technical Experience (AI & Machine Learning), GeeksForGeeks (12/2022 - 07/2024)**: You worked on various projects in Generative AI, NLP, Deep Learning, and Computer Vision domains. Although the specific details of these projects are not provided, it's clear that you have a strong background in AI and ML.
+* **Subject Matter Expert (Mathematics), Evelyn Learning (02/2020 - 06/2020)**: You worked as an Operation Research expert with Magicpin in Gurgaon, India. Although the specific details of this role are not provided, it's clear that you have a strong mathematical background.
+
+**Projects:**
+
+* **Invention Agent**: You built an AI stock research agent that maps natural-language queries to NSE-listed equities, fetches live quotes and recent news, and outputs both structured JSON and a CLI-friendly report. This project involved web/news retrieval via DuckDuckGoSearchAPIWrapper, LLM-based entity extraction, and deterministic NSE symbol resolution.
+* **Movie Recommendation System**: You built a persistent content-based movie recommender using ChromaDB PersistentClient, storing embeddings on disk to reuse the vector index across runs. This project involved implementing an embedding pipeline with SentenceTransformerEmbeddingFunction and creating a Chroma collection advanced_movie_search with HNSW ANN indexing.
+* **Automatic Number Plate Recognition (ANPR) & License Plate Recognition (LPR)**: You worked on plate detection using YOLOv8 and fine-tuned the Transformer-based OCR model to excel in recognizing characters on license plates, achieving an outstanding 98% accuracy.
+* **Intelligent Voice Bot**: You built a voice bot that converts input audio to text using speech recognition or whisper, provides converted text input with previous history to an LLM, and converts received output to output audio using gtts. This project also involved adding audio classification to stop with the excite words.
+* **Meal Grocery Planner**: You built a multi-agent AI meal planning and grocery management system using CrewAI with structured Pydantic outputs. This project involved orchestrating specialized agents for recipe research, shopping list generation, budget optimization, leftover management, and report compilation.
+
+**Education:**
+
+Although your education is not explicitly mentioned in the profile, it's clear that you have a strong academic background in mathematics and computer science.
+
+Let me know if there's anything specific you'd like to know about your experiences or if you'd like more information on any of these topics!
+2026-02-22 09:03:10 [INFO] User: It is not Invention Agent.. It is share market Investment agent.
+
+My educational details are as follows:
+B. Tech (Mechanical Engineering),
+Amritsar College of Engineering & Technology
+08/2014 – 11/2018 | Amritsar, India
+
+- IBM RAG and Agentic AI⁠, IBM
+- Complete Machine Learning & Data Science Program⁠, GeeksforGeeks
+- Data Structures & Algorithms in Python⁠, GeeksforGeeks
+- Python For Data Science AI & Development⁠, IBM
+ And currently learning MLOps | Machine Learning Operations Specialization from Duke University online from coursera..
+2026-02-22 09:05:32 [INFO] AI: Here's the updated information:
+
+**Work Experience:**
+
+* **Software Developer - AI/ML, Metro Infrasys (08/2024 - Present)**: You developed and deployed end-to-end ANPR and ATCC systems, covering data preparation, model training, inference pipelines, and production rollout. You also built high-performance APIs using FastAPI and integrated with Dockerized MLOps workflows for scalable and efficient deployment.
+* **Technical Experience (AI & Machine Learning), GeeksForGeeks (12/2022 - 07/2024)**: You worked on various projects in Generative AI, NLP, Deep Learning, and Computer Vision domains. Although the specific details of these projects are not provided, it's clear that you have a strong background in AI and ML.
+* **Subject Matter Expert (Mathematics), Evelyn Learning (02/2020 - 06/2020)**: You worked as an Operation Research expert with Magicpin in Gurgaon, India. Although the specific details of this role are not provided, it's clear that you have a strong mathematical background.
+
+**Projects:**
+
+* **Share Market Investment Agent**: You built an AI stock research agent that maps natural-language queries to NSE-listed equities, fetches live quotes and recent news, and outputs both structured JSON and a CLI-friendly report. This project involved web/news retrieval via DuckDuckGoSearchAPIWrapper, LLM-based entity extraction, and deterministic NSE symbol resolution.
+* **Movie Recommendation System**: You built a persistent content-based movie recommender using ChromaDB PersistentClient, storing embeddings on disk to reuse the vector index across runs. This project involved implementing an embedding pipeline with SentenceTransformerEmbeddingFunction and creating a Chroma collection advanced_movie_search with HNSW ANN indexing.
+* **Automatic Number Plate Recognition (ANPR) & License Plate Recognition (LPR)**: You worked on plate detection using YOLOv8 and fine-tuned the Transformer-based OCR model to excel in recognizing characters on license plates, achieving an outstanding 98% accuracy.
+* **Intelligent Voice Bot**: You built a voice bot that converts input audio to text using speech recognition or whisper, provides converted text input with previous history to an LLM, and converts received output to output audio using gtts. This project also involved adding audio classification to stop with the excite words.
+* **Meal Grocery Planner**: You built a multi-agent AI meal planning and grocery management system using CrewAI with structured Pydantic outputs. This project involved orchestrating specialized agents for recipe research, shopping list generation, budget optimization, leftover management, and report compilation.
+
+**Education:**
+
+* **B. Tech (Mechanical Engineering), Amritsar College of Engineering & Technology (08/2014 - 11/2018)**: You completed your Bachelor's degree in Mechanical Engineering from Amritsar College of Engineering & Technology.
+* **IBM RAG and Agentic AI, IBM**: You completed a program on IBM RAG and Agentic AI.
+* **Complete Machine Learning & Data Science Program, GeeksforGeeks**: You completed a comprehensive machine learning and data science program.
+* **Data Structures & Algorithms in Python, GeeksforGeeks**: You learned data structures and algorithms in Python.
+* **Python For Data Science AI & Development, IBM**: You learned Python for data science, AI, and development.
+* **Currently learning MLOps | Machine Learning Operations Specialization from Duke University online from Coursera**: You are currently pursuing an MLOps specialization from Duke University on Coursera.
+
+Let me know if there's anything else you'd like to add or update!
+2026-02-22 09:11:44 [INFO] Exit command received
+2026-02-22 09:11:44 [INFO] SQLite connection closed
