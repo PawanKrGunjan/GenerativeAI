@@ -1,0 +1,17 @@
+langchain
+langchain-community
+langchain-ollama
+langgraph
+prompt-toolkit
+colorama
+pydantic
+tqdm
+numpy
+pandas
+pytest
+pytest-cov
+ruff
+black
+mypy
+types-tqdm
+pdoc3     # only if you use make docs
