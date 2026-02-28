@@ -61,14 +61,15 @@ def print_welcome_banner(user_id: str) -> None:
 
 
 def help_text() -> str:
-    """Help message content (used by /help and F1)"""
     return f"""{Fore.GREEN}Available Commands:{Style.RESET_ALL}
-  {Fore.BLUE}/help{Style.RESET_ALL}     Show this help message
-  {Fore.BLUE}/sync{Style.RESET_ALL}     Re-index documents in ./data
-  {Fore.BLUE}/docs{Style.RESET_ALL}      List all indexed documents
-  {Fore.BLUE}/new{Style.RESET_ALL}       Start a new conversation thread
-  {Fore.BLUE}/clear{Style.RESET_ALL}     Clear the screen
-  {Fore.BLUE}/exit{Style.RESET_ALL}      Quit the application
+  {Fore.BLUE}/help{Style.RESET_ALL}       Show this help message
+  {Fore.BLUE}/sync{Style.RESET_ALL}       Re-index documents in ./data
+  {Fore.BLUE}/docs{Style.RESET_ALL}       List all indexed documents
+  {Fore.BLUE}/new{Style.RESET_ALL}        Start a new conversation thread
+  {Fore.BLUE}/user{Style.RESET_ALL}       Switch active user
+  {Fore.BLUE}/role{Style.RESET_ALL}       Switch active role
+  {Fore.BLUE}/clear{Style.RESET_ALL}      Clear the screen
+  {Fore.BLUE}/exit{Style.RESET_ALL}       Quit the application
 
 {Fore.GREEN}Keyboard Shortcuts:{Style.RESET_ALL}
   Enter         → new line (multiline mode)
@@ -77,7 +78,6 @@ def help_text() -> str:
   Ctrl+L        → clear screen
   F1            → show help
 """
-
 
 def print_help() -> None:
     """Display formatted help panel"""
@@ -155,7 +155,78 @@ class TerminalChatUI:
             return (raw or "").strip()
         except (EOFError, KeyboardInterrupt):
             return None
+    # -------------------------------------------------
+    # USER SWITCHING
+    # -------------------------------------------------
 
+    def switch_user(self) -> str:
+        """Interactive user switch"""
+        print(f"\n{Fore.CYAN}Switch User{Style.RESET_ALL}")
+        raw = input("Enter username: ").strip()
+        new_user = normalize_user(raw)
+
+        if not new_user:
+            print_system_msg("Invalid username.", "✗", Fore.RED)
+            return self.user_id
+
+        # update session history file
+        history_file = HISTORY_DIR / f"{new_user}.history.txt"
+
+        self.session = PromptSession(
+            history=FileHistory(str(history_file)),
+            auto_suggest=AutoSuggestFromHistory(),
+            enable_history_search=True,
+        )
+
+        self.user_id = new_user
+        print_system_msg(f"Active user changed to: {new_user}", "👤", Fore.CYAN)
+        return new_user
+
+    # -------------------------------------------------
+    # ROLE SWITCHING
+    # -------------------------------------------------
+
+    def switch_role(self, current_role: str) -> str:
+        """Interactive role switch with selection menu"""
+
+        predefined_roles = [
+            "Friend",
+            "Mentor",
+            "Developer",
+            "Researcher",
+            "Strategist",
+            "Business",
+            "Therapist",
+        ]
+
+        print(f"\n{Fore.CYAN}Select Role:{Style.RESET_ALL}")
+
+        for i, r in enumerate(predefined_roles, 1):
+            print(f"  {i}. {r}")
+
+        print(f"  {len(predefined_roles)+1}. Custom Role")
+
+        choice = input("\nEnter choice number: ").strip()
+
+        try:
+            idx = int(choice)
+        except ValueError:
+            print_system_msg("Invalid choice.", "✗", Fore.RED)
+            return current_role
+
+        if 1 <= idx <= len(predefined_roles):
+            role = predefined_roles[idx - 1]
+        elif idx == len(predefined_roles) + 1:
+            role = input("Enter custom role name: ").strip()
+            if not role:
+                print_system_msg("Invalid role.", "✗", Fore.RED)
+                return current_role
+        else:
+            print_system_msg("Invalid selection.", "✗", Fore.RED)
+            return current_role
+
+        print_system_msg(f"Active role changed to: {role}", "🎭", Fore.CYAN)
+        return role
 
 # ────────────────────────────────────────────────
 # Output Helpers (used in run.py)

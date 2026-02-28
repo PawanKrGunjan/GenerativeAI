@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-Agent ─ Personal long-term memory + RAG agent
-PostgreSQL + psycopg 3.x version
-Run with: python run.py
+Offline Personal Identity Agent
+PostgreSQL + pgvector + Role-aware memory
+Run: python run.py
 """
 
 import logging
@@ -14,12 +14,11 @@ import psycopg
 from colorama import Fore, Style, init
 from langgraph.checkpoint.memory import MemorySaver
 
-from Agent.config import DATA_DIR, MODEL_NAME
+from Agent.config import DATA_DIR, MODEL_NAME, GRAPH_DIR
 from Agent.db_postgresql import (
     get_pg_connection,
     get_indexed_documents,
     setup_chat_history_table,
-    setup_facts_table,
     setup_documents_table,
     setup_document_chunks_table,
     sync_documents_to_db,
@@ -32,7 +31,6 @@ from Agent.ui import (
     clear_screen,
     help_text,
     make_thread_id,
-    normalize_user,
     print_ai_reply,
     print_divider,
     print_system_msg,
@@ -44,57 +42,94 @@ init(autoreset=True)
 
 
 # =====================================================
+# ROLE SELECTION
+# =====================================================
+
+def select_role() -> str:
+    roles = [
+        "Friend",
+        "Mentor",
+        "Developer",
+        "Researcher",
+        "Strategist",
+        "Business",
+        "Therapist",
+    ]
+
+    print(f"\n{Fore.CYAN}Select Role:{Style.RESET_ALL}")
+    for i, r in enumerate(roles, 1):
+        print(f"  {i}. {r}")
+    print("  0. Type Custom Role")
+
+    while True:
+        choice = input(f"\n{Fore.YELLOW}Enter choice number: {Style.RESET_ALL}").strip()
+
+        if choice.isdigit():
+            choice = int(choice)
+
+            if 1 <= choice <= len(roles):
+                return roles[choice - 1]
+
+            elif choice == 0:
+                custom = input(
+                    f"{Fore.YELLOW}Enter custom role: {Style.RESET_ALL}"
+                ).strip()
+                if custom:
+                    return custom
+
+        print(f"{Fore.RED}Invalid selection. Try again.{Style.RESET_ALL}")
+
+
+# =====================================================
 # MAIN
 # =====================================================
 
-
 def main() -> None:
+
     print_divider(78, "═", Fore.CYAN)
-    print(
-        f"{Fore.CYAN}  Welcome to Agent • PostgreSQL + pgvector RAG  {Style.RESET_ALL}"
-    )
+    print(f"{Fore.CYAN}  Offline Personal Identity Agent  {Style.RESET_ALL}")
     print_divider(78, "═", Fore.CYAN)
 
-    print(f"{Fore.CYAN}Initial Help & Commands:{Style.RESET_ALL}")
     print(help_text())
     print_divider(78, "─", Fore.YELLOW)
 
     # -------------------------------------------------
-    # USER LOGIN
+    # HARDCODED USER
     # -------------------------------------------------
 
-    while True:
-        raw = input(
-            f"{Fore.YELLOW}Username (Enter for anonymous): {Style.RESET_ALL}"
-        ).strip()
-        user_id = normalize_user(raw)
-        if user_id:
-            break
-        print(
-            f"{Fore.YELLOW}Please enter a username or press Enter.{Style.RESET_ALL}\n"
-        )
+    user_id = "PawanKrGunjan"
+
+    print(f"{Fore.GREEN}User: {user_id}{Style.RESET_ALL}")
+
+    # -------------------------------------------------
+    # ROLE SELECTION
+    # -------------------------------------------------
+
+    role = select_role()
+    print(f"{Fore.GREEN}Active Role: {role}{Style.RESET_ALL}")
 
     log = setup_logger(user_id)
-    log.info("Starting Agent | model=%s | user=%s | DB=PostgreSQL", MODEL_NAME, user_id)
+    log.info("Starting Agent | model=%s | user=%s | role=%s",
+             MODEL_NAME, user_id, role)
 
     pg_conn: Optional[psycopg.Connection] = None
 
     try:
         # -------------------------------------------------
-        # DB SETUP
+        # DATABASE SETUP
         # -------------------------------------------------
 
-        pg_conn = get_pg_connection()
-        log.info("✅ PostgreSQL + pgvector connected")
+        pg_conn = get_pg_connection(log)   # ✅ FIXED
 
-        setup_facts_table(pg_conn, log)
+        log.info("Connected to PostgreSQL")
+
         setup_chat_history_table(pg_conn, log)
         setup_documents_table(pg_conn, log)
         setup_document_chunks_table(pg_conn, log)
 
-        log.info("Scanning/indexing documents in %s...", DATA_DIR)
+        log.info("Syncing documents from %s", DATA_DIR)
         sync_documents_to_db(pg_conn, log)
-        log.info("✅ Document indexing complete")
+        log.info("Document indexing complete")
 
         # -------------------------------------------------
         # GRAPH BUILD
@@ -105,12 +140,18 @@ def main() -> None:
         graph = build_graph(
             checkpointer=checkpointer,
             pg_conn=pg_conn,
-            logger=log,
             embeddings_model=embeddings_model,
+            logger=log,
         )
 
-        log.info("✅ LangGraph compiled")
-        save_graph_visualization(graph, log)
+        log.info("LangGraph compiled successfully")
+
+        save_graph_visualization(
+            graph,
+            GRAPH_DIR,
+            logger=log,
+            save_png=True,
+        )
 
         # -------------------------------------------------
         # UI INIT
@@ -118,12 +159,11 @@ def main() -> None:
 
         ui = TerminalChatUI(user_id=user_id, log=log)
 
-        print_divider(78, "═", Fore.CYAN)
-        log.info("Agent ready • User: %s", user_id)
-        print_divider(78, "═", Fore.CYAN)
-
         thread_id = make_thread_id(user_id)
-        log.info("Session thread: %s", thread_id)
+
+        log.info("Session started | thread=%s | role=%s",
+                 thread_id, role)
+
         print_divider()
 
         # -------------------------------------------------
@@ -131,6 +171,7 @@ def main() -> None:
         # -------------------------------------------------
 
         while True:
+
             try:
                 user_input = ui.prompt(thread_id)
             except (EOFError, KeyboardInterrupt):
@@ -142,12 +183,9 @@ def main() -> None:
                 continue
 
             text = user_input.strip()
-            if not text:
-                continue
-
             cmd = text.lower()
 
-            # ---------------- Commands ----------------
+            # ---------------- COMMANDS ----------------
 
             if cmd in {"/exit", "exit", "quit", "q"}:
                 log.info("Exit command received")
@@ -155,12 +193,10 @@ def main() -> None:
                 break
 
             elif cmd in {"/help", "help", "?"}:
-                log.info("Help requested")
                 print("\n" + help_text() + "\n")
                 continue
 
             elif cmd in {"/clear", "clear"}:
-                log.info("Screen clear")
                 clear_screen()
                 continue
 
@@ -170,59 +206,75 @@ def main() -> None:
                 print(f"\n{Fore.CYAN}→ New session: {thread_id}{Style.RESET_ALL}\n")
                 continue
 
-            elif cmd in {"/sync", "sync", "/index"}:
-                log.info("Re-indexing")
-                print(f"{Fore.YELLOW}→ Re-indexing...{Style.RESET_ALL}")
+            elif cmd.startswith("/role "):
+                role = text.split("/role ", 1)[1].strip()
+                log.info("Role switched to: %s", role)
+                print(f"{Fore.CYAN}→ Role changed to: {role}{Style.RESET_ALL}")
+                continue
+
+            elif cmd in {"/sync", "sync"}:
+                print(f"{Fore.YELLOW}Re-indexing documents...{Style.RESET_ALL}")
                 sync_documents_to_db(pg_conn, log)
-                print(f"{Fore.GREEN}→ Done.{Style.RESET_ALL}\n")
+                print(f"{Fore.GREEN}Done.{Style.RESET_ALL}")
                 continue
 
             elif cmd in {"/docs", "docs"}:
-                log.info("List docs")
                 paths = get_indexed_documents(pg_conn, log)
 
                 if not paths:
                     print_system_msg("No documents indexed.", "📂", Fore.YELLOW)
                 else:
-                    print(f"{Fore.CYAN}📄 Indexed docs:{Style.RESET_ALL}")
+                    print(f"{Fore.CYAN}Indexed documents:{Style.RESET_ALL}")
                     for p in paths:
                         print(f"  • {Path(p).name}")
-                    print()
                 continue
 
-            # ---------------- Normal Chat ----------------
+            elif cmd in {"/user","user"}:
+                user_id = ui.switch_user()
+                log = setup_logger(user_id)
+                thread_id = make_thread_id(user_id)
+                continue
+
+            elif cmd in {"/role",'role'}:
+                role = ui.switch_role(role)
+                continue
+
+            # ---------------- NORMAL CHAT ----------------
 
             print_user_message(text)
-            log.info("User: %s", text)
+            log.info("User (%s): %s", role, text)
 
             print_thinking()
-            log.debug("Agent inference")
 
             reply = run_turn(
                 graph=graph,
-                user_id=user_id,
+                user=user_id,
                 thread_id=thread_id,
+                role=role,
                 text=text,
                 logger=log,
             )
 
             if reply:
-                log.info("AI reply (%d chars)", len(reply))
                 print_ai_reply(reply)
+                log.info("AI reply (%d chars)", len(reply))
             else:
-                log.warning("No reply")
                 print_system_msg("No response", "✗", Fore.RED)
+                log.warning("No reply generated")
 
             print_divider()
 
-    except Exception as exc:
+    except Exception:
         log.error("Main error:\n%s", traceback.format_exc())
-        print_system_msg(f"Error: {exc}", "✋", Fore.RED)
+        print_system_msg("Fatal error occurred", "✋", Fore.RED)
 
     finally:
         if pg_conn:
-            pg_conn.close()
-            log.info("PostgreSQL closed")
+            try:
+                pg_conn.close()
+                log.info("PostgreSQL connection closed")
+            except Exception:
+                log.warning("Failed to close DB cleanly")
 
 
 # =====================================================
@@ -234,7 +286,7 @@ if __name__ == "__main__":
         main()
     except KeyboardInterrupt:
         print(f"\n{Fore.MAGENTA}Interrupted. Bye!{Style.RESET_ALL}")
-    except Exception as exc:
+    except Exception:
         logging.error("Fatal:\n%s", traceback.format_exc())
-        print(f"\n{Fore.RED}Fatal: {exc}\n{traceback.format_exc()}{Style.RESET_ALL}")
+        print(f"\n{Fore.RED}Fatal error. Check logs.{Style.RESET_ALL}")
         exit(1)

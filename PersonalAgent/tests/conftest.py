@@ -9,10 +9,10 @@ from pathlib import Path
 
 import pytest
 
-from Agent.database import (
+from Agent.db_postgresql import (
     setup_document_chunks_table,
     setup_documents_table,
-    setup_facts_table,
+    setup_chat_history_table
 )
 
 
@@ -31,7 +31,7 @@ def temp_db_conn(temp_db_path):
     conn = sqlite3.connect(temp_db_path, check_same_thread=False)
 
     # Setup schema
-    setup_facts_table(conn, None)  # pass None for log (or mock)
+    setup_chat_history_table(conn, None)  # pass None for log (or mock)
     setup_documents_table(conn, None)
     setup_document_chunks_table(conn, None)
 

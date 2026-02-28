@@ -39,23 +39,23 @@ def embed_text(text: str) -> np.ndarray:
         raise RuntimeError(f"Embedding failed: {exc}") from exc
 
 
-extraction_prompt = ChatPromptTemplate.from_messages(
-    [
-        (
-            "system",
-            """Extract explicit facts as key-value pairs. Use confidence=1.0 for obvious facts.
+# extraction_prompt = ChatPromptTemplate.from_messages(
+#     [
+#         (
+#             "system",
+#             """Extract explicit facts as key-value pairs. Use confidence=1.0 for obvious facts.
 
-Examples (exact format):
-- "I am Rupam" → key="name", value="Rupam", confidence=1.0  
-- "I live in Patna" → key="location", value="Patna", confidence=1.0
+# Examples (exact format):
+# - "I am Rupam" → key="name", value="Rupam", confidence=1.0  
+# - "I live in Patna" → key="location", value="Patna", confidence=1.0
 
-For "Hi, I am Rupam & You?": ONLY extract name="Rupam"
-Ignore "You?", punctuation.
+# For "Hi, I am Rupam & You?": ONLY extract name="Rupam"
+# Ignore "You?", punctuation.
 
-Output ONLY valid JSON array matching schema.""",
-        ),
-        ("human", "{message}"),
-    ]
-)
+# Output ONLY valid JSON array matching schema.""",
+#         ),
+#         ("human", "{message}"),
+#     ]
+# )
 
-extraction_chain = extraction_prompt | llm.with_structured_output(ExtractedFacts)
+# extraction_chain = extraction_prompt | llm.with_structured_output(ExtractedFacts)
