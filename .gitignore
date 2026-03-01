@@ -35,5 +35,5 @@ venv
 *.pdf
 logs
 models
-
+history
 .ipynb_checkpoints
