@@ -150,7 +150,7 @@ def main() -> None:
             graph,
             GRAPH_DIR,
             logger=log,
-            save_png=True,
+            save_png=False,
         )
 
         # -------------------------------------------------

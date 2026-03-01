@@ -3,6 +3,7 @@ langgraph
 langchain
 langchain-core
 nsepython
+nsepy
 # Env loading
 python-dotenv
 
