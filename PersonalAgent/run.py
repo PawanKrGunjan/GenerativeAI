@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """
-Offline Personal Identity Agent
-PostgreSQL + pgvector + Role-aware memory
+Offline Personal Identity Agent - Main Entry Point
+Uses class-based PersonalAssistanceAgent from graph.py
+With optional post-response rating & correction (dev mode only)
 Run: python run.py
 """
 
@@ -12,9 +13,13 @@ from typing import Optional
 
 import psycopg
 from colorama import Fore, Style, init
-from langgraph.checkpoint.memory import MemorySaver
 
-from Agent.config import DATA_DIR, MODEL_NAME, GRAPH_DIR
+from Agent.config import (
+    DATA_DIR,
+    GRAPH_DIR,
+    DEFAULT_MAX_ITERATIONS,
+    ENABLE_RESPONSE_RATING,  # ← NEW: control flag
+)
 from Agent.db_postgresql import (
     get_pg_connection,
     get_indexed_documents,
@@ -23,7 +28,7 @@ from Agent.db_postgresql import (
     setup_document_chunks_table,
     sync_documents_to_db,
 )
-from Agent.graph import build_graph, run_turn, save_graph_visualization
+from Agent.graph import PersonalAssistanceAgent
 from Agent.llm import embeddings_model
 from Agent.logger import setup_logger
 from Agent.ui import (
@@ -71,9 +76,7 @@ def select_role() -> str:
                 return roles[choice - 1]
 
             elif choice == 0:
-                custom = input(
-                    f"{Fore.YELLOW}Enter custom role: {Style.RESET_ALL}"
-                ).strip()
+                custom = input(f"{Fore.YELLOW}Enter custom role: {Style.RESET_ALL}").strip()
                 if custom:
                     return custom
 
@@ -85,7 +88,6 @@ def select_role() -> str:
 # =====================================================
 
 def main() -> None:
-
     print_divider(78, "═", Fore.CYAN)
     print(f"{Fore.CYAN}  Offline Personal Identity Agent  {Style.RESET_ALL}")
     print_divider(78, "═", Fore.CYAN)
@@ -94,33 +96,25 @@ def main() -> None:
     print_divider(78, "─", Fore.YELLOW)
 
     # -------------------------------------------------
-    # HARDCODED USER
+    # USER & ROLE SETUP
     # -------------------------------------------------
-
     user_id = "PawanKrGunjan"
-
     print(f"{Fore.GREEN}User: {user_id}{Style.RESET_ALL}")
-
-    # -------------------------------------------------
-    # ROLE SELECTION
-    # -------------------------------------------------
 
     role = select_role()
     print(f"{Fore.GREEN}Active Role: {role}{Style.RESET_ALL}")
 
     log = setup_logger(user_id)
-    log.info("Starting Agent | model=%s | user=%s | role=%s",
-             MODEL_NAME, user_id, role)
+    log.info("Starting Agent | user=%s | role=%s", user_id, role)
 
     pg_conn: Optional[psycopg.Connection] = None
+    agent: Optional[PersonalAssistanceAgent] = None
 
     try:
         # -------------------------------------------------
         # DATABASE SETUP
         # -------------------------------------------------
-
-        pg_conn = get_pg_connection(log)   # ✅ FIXED
-
+        pg_conn = get_pg_connection(log)
         log.info("Connected to PostgreSQL")
 
         setup_chat_history_table(pg_conn, log)
@@ -132,46 +126,34 @@ def main() -> None:
         log.info("Document indexing complete")
 
         # -------------------------------------------------
-        # GRAPH BUILD
+        # AGENT INITIALIZATION
         # -------------------------------------------------
-
-        checkpointer = MemorySaver()
-
-        graph = build_graph(
-            checkpointer=checkpointer,
+        agent = PersonalAssistanceAgent(
             pg_conn=pg_conn,
             embeddings_model=embeddings_model,
             logger=log,
+            max_iterations=5,
         )
 
-        log.info("LangGraph compiled successfully")
+        log.info("PersonalAssistanceAgent initialized")
 
-        save_graph_visualization(
-            graph,
-            GRAPH_DIR,
-            logger=log,
-            save_png=False,
-        )
+        # Optional: save graph visualization once
+        agent.save_graph_visualization(Path(GRAPH_DIR), save_png=False)
 
         # -------------------------------------------------
         # UI INIT
         # -------------------------------------------------
-
         ui = TerminalChatUI(user_id=user_id, log=log)
 
         thread_id = make_thread_id(user_id)
-
-        log.info("Session started | thread=%s | role=%s",
-                 thread_id, role)
+        log.info("Session started | thread=%s | role=%s", thread_id, role)
 
         print_divider()
 
         # -------------------------------------------------
         # CHAT LOOP
         # -------------------------------------------------
-
         while True:
-
             try:
                 user_input = ui.prompt(thread_id)
             except (EOFError, KeyboardInterrupt):
@@ -220,23 +202,12 @@ def main() -> None:
 
             elif cmd in {"/docs", "docs"}:
                 paths = get_indexed_documents(pg_conn, log)
-
                 if not paths:
                     print_system_msg("No documents indexed.", "📂", Fore.YELLOW)
                 else:
                     print(f"{Fore.CYAN}Indexed documents:{Style.RESET_ALL}")
                     for p in paths:
                         print(f"  • {Path(p).name}")
-                continue
-
-            elif cmd in {"/user","user"}:
-                user_id = ui.switch_user()
-                log = setup_logger(user_id)
-                thread_id = make_thread_id(user_id)
-                continue
-
-            elif cmd in {"/role",'role'}:
-                role = ui.switch_role(role)
                 continue
 
             # ---------------- NORMAL CHAT ----------------
@@ -246,18 +217,59 @@ def main() -> None:
 
             print_thinking()
 
-            reply = run_turn(
-                graph=graph,
-                user=user_id,
-                thread_id=thread_id,
+            reply = agent.run(
+                user_id=user_id,
                 role=role,
                 text=text,
-                logger=log,
+                thread_id=thread_id,
             )
 
             if reply:
                 print_ai_reply(reply)
                 log.info("AI reply (%d chars)", len(reply))
+
+                # NEW: Optional rating & correction (only if enabled)
+                if ENABLE_RESPONSE_RATING:
+                    print(f"\n{Fore.YELLOW}Rate this response (1–10) or press Enter to skip: {Style.RESET_ALL}", end="")
+                    rating_input = input().strip()
+
+                    rating = None
+                    correction = ""
+
+                    if rating_input:
+                        try:
+                            rating = int(rating_input)
+                            if 1 <= rating <= 10:
+                                log.info("User rated response: %d/10", rating)
+
+                                if rating < 4:
+                                    print(f"{Fore.RED}Low rating ({rating}) — original response may not be saved in future.{Style.RESET_ALL}")
+
+                                # Optional correction
+                                correction_prompt = f"{Fore.YELLOW}Any correction or improvement suggestion? (optional, press Enter to skip): {Style.RESET_ALL}"
+                                correction = input(correction_prompt).strip()
+
+                                if correction:
+                                    log.info("Correction provided: %s", correction)
+                                    print(f"{Fore.CYAN}Re-generating improved response...{Style.RESET_ALL}")
+
+                                    # Re-run agent with feedback (same thread)
+                                    improved = agent.run(
+                                        user_id=user_id,
+                                        role=role,
+                                        text=f"[USER FEEDBACK ON PREVIOUS RESPONSE] Rating: {rating}/10. Correction: {correction}\nPlease improve or correct your previous response.",
+                                        thread_id=thread_id,
+                                    )
+                                    if improved:
+                                        print(f"\n{Fore.CYAN}Improved version:{Style.RESET_ALL}")
+                                        print_ai_reply(improved)
+
+                            else:
+                                print(f"{Fore.YELLOW}Rating out of range — skipped.{Style.RESET_ALL}")
+
+                        except ValueError:
+                            print(f"{Fore.YELLOW}Invalid rating — skipped.{Style.RESET_ALL}")
+
             else:
                 print_system_msg("No response", "✗", Fore.RED)
                 log.warning("No reply generated")

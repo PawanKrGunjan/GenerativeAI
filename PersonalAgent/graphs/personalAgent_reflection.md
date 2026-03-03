@@ -7,13 +7,20 @@ config:
 graph TD;
 	__start__([<p>__start__</p>]):::first
 	memory(memory)
-	LLM(LLM)
+	react_llm(react_llm)
+	tool_caller(tool_caller)
 	save_chat(save_chat)
+	reflection(reflection)
 	__end__([<p>__end__</p>]):::last
-	LLM --> save_chat;
 	__start__ --> memory;
-	memory --> LLM;
-	save_chat --> __end__;
+	memory --> react_llm;
+	react_llm -.-> reflection;
+	react_llm -.-> save_chat;
+	react_llm -.-> tool_caller;
+	save_chat --> reflection;
+	tool_caller --> react_llm;
+	reflection --> __end__;
+	react_llm -.-> react_llm;
 	classDef default fill:#f2f0ff,line-height:1.2
 	classDef first fill-opacity:0
 	classDef last fill:#bfb6fc

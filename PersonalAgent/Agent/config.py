@@ -35,3 +35,7 @@ DB_CONFIG = {
     "user": "postgres",
     "password": "Ganesh123",
 }
+
+DEFAULT_MAX_ITERATIONS=3
+ENABLE_RESPONSE_RATING = True  # Set to False in production
+ENABLE_RESPONSE_CORRECTION = True # Disable in Productions
