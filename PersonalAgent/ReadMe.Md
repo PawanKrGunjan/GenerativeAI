@@ -1,119 +1,206 @@
 # 🧠 Offline Personal Identity Agent
 
-An **offline, privacy-first AI identity agent** that answers exactly like the user by learning from:
+### Reflection-Based Self-Learning AI (Fully Offline)
 
-* 📄 User’s private documents
-* 💬 Past chat history
-* 🧠 Long-term memory (PostgreSQL + pgvector)
+An advanced **privacy-first, offline identity engine** that learns to speak exactly like you by combining:
+
+* 📄 Private document retrieval
+* 💬 Past conversation memory
+* 🧠 Semantic vector search (pgvector)
+* 🔁 Self-reflection & quality scoring
+* 🎯 Automatic style evolution
 
 No cloud.
-No data sharing.
-Fully local.
+No telemetry.
+No external APIs.
+100% local.
 
 ---
 
-## 🚀 Overview
+# 🚀 What This Project Is
 
-The **Offline Personal Identity Agent** is designed to:
+This is **not** a generic chatbot.
 
-* Speak exactly like the user
-* Maintain consistent tone and personality
-* Retrieve relevant information from private documents
-* Retrieve similar past conversations
-* Operate 100% offline
-* Store everything locally in PostgreSQL
+It is a **self-improving digital identity system** designed to:
 
-This agent represents the user — not an AI assistant.
+* Speak in your natural tone
+* Maintain personality consistency
+* Retrieve relevant private knowledge
+* Learn from high-quality answers
+* Improve style automatically over time
+* Operate completely offline
+
+It represents the user — not an assistant.
 
 ---
 
-## 🏗 Architecture
+# 🏗 Core Architecture
 
 Built using:
 
-* **LangGraph** – workflow orchestration
-* **PostgreSQL + pgvector** – vector database
-* **Local LLM** – fully offline inference
-* **Local embeddings model** – 768-dimension vectors
-* **Semantic search (RAG)** – document + chat retrieval
+* **LangGraph** → Stateful workflow engine
+* **PostgreSQL + pgvector** → Long-term semantic memory
+* **Local LLM** → Offline inference
+* **Local Embeddings Model** → Vector generation
+* **Reflection Module** → Answer evaluation & learning
 
 ---
 
-### 🔁 Graph Flow
+# 🔁 Reflection-Based Agent Flow
+
+The current production engine is:
 
 ```
-START
-  ↓
-Retrieve Memory
-  - Document Chunks
-  - Past Chat Messages
-  ↓
-Generate Identity Response
-  - Impersonates user
-  - Uses reference memory
-  ↓
-Save Chat History
-  ↓
-END
+Agent/reflection_agent.py
+```
+
+Graph Workflow:
+```mermaid
+---
+config:
+  flowchart:
+    curve: linear
+---
+graph TD;
+	__start__([<p>__start__</p>]):::first
+	memory(memory)
+	generator(generator)
+	tool(tool)
+	reflect(reflect)
+	save(save)
+	__end__([<p>__end__</p>]):::last
+	__start__ --> memory;
+	generator -.-> __end__;
+	generator -.-> reflect;
+	generator -.-> tool;
+	memory --> generator;
+	reflect -.-> save;
+	tool --> generator;
+	save --> __end__;
+	generator -.-> generator;
+	classDef default fill:#f2f0ff,line-height:1.2
+	classDef first fill-opacity:0
+	classDef last fill:#bfb6fc
+
 ```
 
 ---
 
-## 📂 Project Structure
+# 🧠 How the Reflection System Works
+
+### 1️⃣ Memory Retrieval
+
+* Searches private documents (RAG)
+* Searches similar past chats
+* Loads role-specific style guide
+
+### 2️⃣ Generation
+
+* Produces answer
+* May call a tool once
+* Generates natural, concise response
+
+### 3️⃣ Reflection (Core Innovation)
+
+The agent:
+
+* Rates its own answer (1–5)
+* Extracts strong response patterns
+* Identifies style signals
+* Stores lessons for future improvement
+
+Reflection is **non-destructive** — it never drops valid responses.
+
+### 4️⃣ Learning
+
+If answer quality ≥ threshold:
+
+* Chat is stored
+* Metadata saved
+* Style guide may be updated
+* Agent evolves
+
+---
+
+# 🎯 Key Features
+
+* ✅ Fully offline LLM
+* ✅ Fully offline embeddings
+* ✅ PostgreSQL + pgvector vector search
+* ✅ Semantic document retrieval (RAG)
+* ✅ Chat history retrieval
+* ✅ Self-reflection scoring
+* ✅ Automatic style guide evolution
+* ✅ Per-role personality modeling
+* ✅ Persistent long-term memory
+* ✅ Identity-locked responses
+* ✅ No assistant-style contamination
+
+---
+
+# 📂 Project Structure
 
 ```
 PersonalAgent/
 │
 ├── Agent/
-│   ├── config.py              # Configuration & DB settings
-│   ├── db_postgresql.py       # PostgreSQL + pgvector logic
-│   ├── db_sqlite.py           # Optional SQLite support
-│   ├── document_reader.py     # Document loading & chunking
-│   ├── graph.py               # LangGraph workflow
-│   ├── llm.py                 # Local LLM + embeddings
-│   ├── logger.py              # Logging setup
-│   ├── schemas.py             # DB schemas
-│   ├── ui.py                  # Optional UI layer
+│   ├── config.py
+│   ├── db_postgresql.py
+│   ├── document_reader.py
+│   ├── reflection_agent.py     # 🔥 Production agent (latest)
+│   ├── llm.py
+│   ├── logger.py
+│   ├── schemas.py
+│   ├── ui.py
 │   └── __init__.py
 │
-├── data/                      # User private documents
-├── logs/                      # Log files
-├── run.py                     # Entry point
+├── data/                       # Private documents
+├── logs/                       # Local logs
+├── style_guides/               # Auto-evolving style guides
+├── graphs/                     # Agent graph visualizations
+├── run.py                      # Entry point
 └── README.md
 ```
 
 ---
 
-## 🔐 Privacy Design
+# 🔐 Privacy Model
 
-* No external API calls
-* No OpenAI usage
-* No cloud storage
-* No telemetry
-* All embeddings computed locally
-* All chats stored locally
+This system guarantees:
 
-The system is designed for **complete data sovereignty**.
+* ❌ No OpenAI API usage
+* ❌ No cloud calls
+* ❌ No telemetry
+* ❌ No data sharing
+* ❌ No external inference
+* ✅ Local embeddings
+* ✅ Local vector storage
+* ✅ Local chat history
+* ✅ Full data sovereignty
+
+Designed for private use environments.
 
 ---
 
-## 🛠 Requirements
+# 🛠 Requirements
 
-### 1️⃣ Python
+## Python
 
 Python 3.10+
 
-### 2️⃣ PostgreSQL with pgvector
+---
 
-Install PostgreSQL and enable vector extension:
+## PostgreSQL + pgvector
+
+Enable vector extension:
 
 ```sql
 CREATE EXTENSION IF NOT EXISTS vector;
 ```
 
-### 3️⃣ Install Dependencies
+---
 
-Inside virtual environment:
+## Install Dependencies
 
 ```bash
 pip install -r requirements.txt
@@ -123,17 +210,21 @@ Typical dependencies:
 
 ```
 langchain
+langchain-community
+langchain-ollama
 langgraph
-psycopg[binary]
-pgvector
+prompt-toolkit
+colorama
+pydantic
 tqdm
+psycopg
 ```
 
 ---
 
-## ⚙️ Setup
+# ⚙️ Setup
 
-### 1️⃣ Configure Database
+## 1️⃣ Configure Database
 
 Edit:
 
@@ -141,44 +232,36 @@ Edit:
 Agent/config.py
 ```
 
-Set:
-
 ```python
 DB_CONFIG = {
     "host": "localhost",
-    "port": 5432,
-    "dbname": "personal_agent",
+    "port": 5433,
+    "dbname": "personalagent",
     "user": "postgres",
-    "password": "your_password"
+    "password": <password>,
 }
 ```
 
 ---
 
-### 2️⃣ Add User Documents
+## 2️⃣ Add Private Documents
 
-Place private files inside:
+Place files inside:
 
 ```
 data/
 ```
 
-Supported formats depend on `document_reader.py`.
-
----
-
-### 3️⃣ Index Documents
-
-On first run, documents are:
+On first run they are:
 
 * Loaded
-* Split into chunks
+* Chunked
 * Embedded
 * Stored in PostgreSQL
 
 ---
 
-## ▶️ Running the Agent
+# ▶️ Running the Agent
 
 From project root:
 
@@ -186,125 +269,101 @@ From project root:
 python3 run.py
 ```
 
+Startup flow:
+
+1. Connect to PostgreSQL
+2. Sync documents
+3. Initialize reflection agent
+4. Auto-run: **"Introduce yourself"**
+5. Start interactive chat
+
 Example:
 
 ```
-User: Hi, how are you?
-Agent: I'm good. What's up?
+User: What are the joining date in accenture offer letter?
+Agent: The joining date is March 30, 2026.
 ```
 
-The agent will:
-
-1. Retrieve relevant memory
-2. Respond like the user
-3. Save the chat for future learning
-
 ---
 
-## 🧠 How Identity Imitation Works
+# 🗄 Database Tables
 
-The system prompt enforces:
+### documents
 
-* You are the user
-* Never reveal you are AI
-* Use past writing style
-* Ground answers in memory
-* Stay concise and natural
+Raw file content + metadata
 
-It retrieves:
+### document_chunks
 
-* Document chunks (semantic search)
-* Past user messages (style learning)
+Chunk embeddings (`VECTOR(n)`)
 
-This avoids assistant-style contamination.
-
----
-
-## 🗄 Database Tables
-
-### 📄 documents
-
-Stores raw file content + metadata
-
-### 📑 document_chunks
-
-Stores chunk embeddings (VECTOR(768))
-
-### 💬 chat_history
+### chat_history
 
 Stores:
 
 * user_id
+* role
 * human_text
 * ai_text
-* embeddings
+* embedding
+* reflection metadata (rating, lessons, summary)
 
-Optimized with `ivfflat` index for fast semantic search.
+Optimized using `ivfflat` index for fast similarity search.
 
 ---
 
-## 📊 Graph Visualization
+# 📊 Graph Visualization
 
-Graph diagram is automatically saved:
+Automatically saved:
 
 ```
-/graph/personalAgent.md
-/graph/personalAgent.png
+graphs/personalAgent_reflection.md
+graphs/personalAgent_reflection.png
 ```
 
-Requires `pyppeteer` for PNG generation.
-
 ---
 
-## 🔎 Key Features
-
-* ✅ Offline LLM
-* ✅ Offline embeddings
-* ✅ PostgreSQL + pgvector
-* ✅ Semantic RAG
-* ✅ Identity impersonation
-* ✅ Self-learning from conversations
-* ✅ Human-like responses
-* ✅ Privacy-first design
-
----
-
-## 🧪 Example Use Cases
+# 🧪 Use Cases
 
 * Personal digital twin
-* Executive email responder
-* Knowledge assistant
-* Offline private AI
-* Persona-consistent chatbot
+* Executive assistant (offline)
+* Knowledge memory engine
+* Research identity system
+* Founder memory assistant
+* Secure enterprise AI
+* Persona-consistent responder
 
 ---
 
-## ⚠️ Important Notes
+# ⚠️ Important Notes
 
 This agent:
 
-* Will mimic writing tone
-* Will reuse phrasing patterns
-* Will reference private documents
-* Should not be exposed publicly without safeguards
+* Mimics tone and phrasing
+* Reuses learned language patterns
+* References private documents
+* Evolves with usage
 
-It is designed for **private local usage only**.
+It is designed strictly for **private local deployment**.
 
----
-
-## 🔮 Future Enhancements
-
-Possible improvements:
-
-* Style fingerprint modeling
-* Emoji distribution learning
-* Sentence-length matching
-* Response timing simulation
-* Multi-persona support
-* Encrypted local database
+Do not expose publicly without access control.
 
 ---
 
-## 📜 License
+# 🔮 Roadmap
 
-Private / Internal Use
+Planned enhancements:
+
+* Advanced style fingerprint modeling
+* Sentence-length distribution learning
+* Emoji and punctuation modeling
+* Async background learning
+* Multi-user identity separation
+* Encrypted database storage
+* Autonomous memory consolidation
+
+---
+
+# 📜 License
+
+Private / Internal Use Only
+
