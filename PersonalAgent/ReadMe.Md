@@ -1,4 +1,4 @@
-# 🧠 Offline Personal Identity Agent
+# 🧠 Offline Personal Assitance Agent
 
 ### Reflection-Based Self-Learning AI (Fully Offline)
 
