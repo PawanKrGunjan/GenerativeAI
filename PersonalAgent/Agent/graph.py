@@ -23,7 +23,7 @@ from Agent.db_postgresql import (
     sync_chat_history,
 )
 from Agent.llm import llm, embeddings_model
-from Agent.config import DEFAULT_MAX_ITERATIONS, ENABLE_RESPONSE_RATING  # ← NEW flag
+from Agent.config import DEFAULT_MAX_ITERATIONS, ENABLE_RESPONSE_RATING
 
 
 # =====================================================

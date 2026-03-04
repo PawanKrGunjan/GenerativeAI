@@ -8,18 +8,19 @@ graph TD;
 	__start__([<p>__start__</p>]):::first
 	memory(memory)
 	generator(generator)
-	tool(tool)
+	tool_caller(tool_caller)
 	reflect(reflect)
-	save(save)
+	save_chat(save_chat)
 	__end__([<p>__end__</p>]):::last
 	__start__ --> memory;
-	generator -.-> __end__;
 	generator -.-> reflect;
-	generator -.-> tool;
+	generator -.-> tool_caller;
 	memory --> generator;
-	reflect -.-> save;
-	tool --> generator;
-	save --> __end__;
+	reflect -. &nbsp;end_without_save&nbsp; .-> __end__;
+	reflect -.-> generator;
+	reflect -. &nbsp;save&nbsp; .-> save_chat;
+	tool_caller --> generator;
+	save_chat --> __end__;
 	generator -.-> generator;
 	classDef default fill:#f2f0ff,line-height:1.2
 	classDef first fill-opacity:0

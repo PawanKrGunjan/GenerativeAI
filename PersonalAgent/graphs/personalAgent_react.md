@@ -7,20 +7,17 @@ config:
 graph TD;
 	__start__([<p>__start__</p>]):::first
 	memory(memory)
-	generator(generator)
+	react(react)
 	tool(tool)
-	reflect(reflect)
 	save(save)
 	__end__([<p>__end__</p>]):::last
 	__start__ --> memory;
-	generator -.-> __end__;
-	generator -.-> reflect;
-	generator -.-> tool;
-	memory --> generator;
-	reflect -.-> save;
-	tool --> generator;
+	memory --> react;
+	react -.-> save;
+	react -.-> tool;
+	tool --> react;
 	save --> __end__;
-	generator -.-> generator;
+	react -.-> react;
 	classDef default fill:#f2f0ff,line-height:1.2
 	classDef first fill-opacity:0
 	classDef last fill:#bfb6fc
