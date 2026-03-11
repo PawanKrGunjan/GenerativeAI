@@ -1,16 +1,27 @@
-# Core agent framework
-langgraph
-langchain
-langchain-core
-nsepython
-nsepy
-# Env loading
+fastapi
+uvicorn
+yfinance
+pandas
+numpy
+psycopg
+sqlalchemy
+pgvector
+ollama
 python-dotenv
 
-# Web/news/search helpers (commonly needed)
-duckduckgo-search
-requests
 
-# Utilities you typically end up using in nodes/tools
-pydantic
-tenacity
+User query
+   ↓
+LLM extracts one or more potential company names / keywords
+   ↓
+Search nse_stocks table for best matching symbol(s)
+   (use similarity / fuzzy / vector / LIKE / full-text search)
+   ↓
+If high-confidence match found → use the canonical symbol
+   If multiple good candidates → ask user to disambiguate (or pick top one + mention alternatives)
+   If no good match → tell user "cannot find this company" + suggest similar names
+   ↓
+Use confirmed symbol(s) in all downstream steps
+   (fetch_price_data, compute indicators, compare returns, etc.)
+   ↓
+Generate final answer

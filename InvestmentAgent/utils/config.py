@@ -1,45 +1,3 @@
-# """
-# Agent/config.py
-# Central configuration — paths, model names, constants
-# """
-
-# from pathlib import Path
-# from typing import Final
-
-# # ── LLM & Embedding ──────────────────────────────────────────────
-# MODEL_NAME: Final[str] = "llama3.2:3b"
-# EMBEDDING_MODEL: Final[str] = "nomic-embed-text:latest"
-# EMBEDDING_DIM = 768
-# # ── Directories (relative to project root) ───────────────────────
-# ROOT_DIR: Final[Path] = Path(__file__).resolve().parents[1]
-# DATA_DIR: Final[Path] = ROOT_DIR / "data"
-# LOG_DIR: Final[Path] = ROOT_DIR / "logs"
-# GRAPH_DIR: Final[Path] = ROOT_DIR / "graphs"
-# HISTORY_DIR: Final[Path] = ROOT_DIR / "history"
-
-# # ── Chunking & Retrieval settings ────────────────────────────────
-# CHUNK_SIZE: Final[int] = 800
-# CHUNK_OVERLAP: Final[int] = 150
-# TOP_K: Final[int] = 7
-# MAX_SOURCE_LENGTH: Final[int] = 250  # used in fact extraction
-
-# # Ensure all directories exist
-# for directory in (DATA_DIR, LOG_DIR, GRAPH_DIR, HISTORY_DIR):
-#     directory.mkdir(parents=True, exist_ok=True)
-
-
-# DB_CONFIG = {
-#     "host": "localhost",
-#     "port": 5433,
-#     "dbname": "personalagent",
-#     "user": "postgres",
-#     "password": "Ganesh123",
-# }
-
-# DEFAULT_MAX_ITERATIONS=3
-# ENABLE_RESPONSE_RATING = True  # Set to False in production
-# ENABLE_RESPONSE_CORRECTION = True # Disable in Productions
-
 """
 app/config.py
 Central configuration — paths, model names, constants
@@ -66,8 +24,7 @@ ROOT_DIR: Final[Path] = Path(os.getenv("ROOT_DIR", ".")).resolve()
 DATA_DIR: Final[Path] = ROOT_DIR / "data"
 LOG_DIR: Final[Path] = ROOT_DIR / "logs"
 GRAPH_DIR: Final[Path] = ROOT_DIR / "graphs"
-HISTORY_DIR: Final[Path] = ROOT_DIR / "history"
-DEFAULT_MAX_ITERATIONS = 3
+#HISTORY_DIR: Final[Path] = ROOT_DIR / "history"
 
 # Important data files
 NIFTY_50_FILE: Final[Path] = DATA_DIR / "ind_nifty50list.csv"
@@ -80,7 +37,7 @@ TOP_K: Final[int] = 7
 MAX_SOURCE_LENGTH: Final[int] = 250
 
 # Create directories if they don't exist
-for directory in (DATA_DIR, LOG_DIR, GRAPH_DIR, HISTORY_DIR):
+for directory in (DATA_DIR, LOG_DIR, GRAPH_DIR):
     directory.mkdir(parents=True, exist_ok=True)
 
 # ── Database configuration ───────────────────────────────────────
@@ -100,14 +57,14 @@ DB_CONFIG = {
     "connect_timeout": 15,
 }
 
-# # Build DSN string for psycopg3
-# DB_CONFIG["dsn"] = (
-#     f"host={DB_CONFIG['host']} "
-#     f"port={DB_CONFIG['port']} "
-#     f"dbname={DB_CONFIG['dbname']} "
-#     f"user={DB_CONFIG['user']} "
-#     f"password={DB_CONFIG['password']}"
-# )
+# Build DSN string for psycopg3
+DB_CONFIG["dsn"] = (
+    f"host={DB_CONFIG['host']} "
+    f"port={DB_CONFIG['port']} "
+    f"dbname={DB_CONFIG['dbname']} "
+    f"user={DB_CONFIG['user']} "
+    f"password={DB_CONFIG['password']}"
+)
 
 # ── Ollama / LLM base URL (if needed) ────────────────────────────
 OLLAMA_BASE_URL: Final[str] = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")

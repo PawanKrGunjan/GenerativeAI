@@ -1,192 +1,300 @@
-# Stock Agent (NSE) — LangGraph + LangChain CLI
+This is a **serious project** — basically building a mini-Indian version of a quant research + advisory engine.
 
-A modular CLI “stock agent” for Indian equities that resolves a company/symbol from user text, fetches NSE market data, pulls news/extras, computes quick metrics, and returns a clean, human-readable answer using a LangGraph workflow.
+You want an **Agentic AI system** that:
 
-## Features
+* Understands natural language queries
+* Fetches live Indian market data
+* Analyzes stocks + mutual funds
+* Calculates returns, risk, CAGR, drawdown, volatility
+* Produces reasoned recommendations
 
-- Symbol resolution from free-text (e.g., “Analyze HAL”, “Tata motors share”).
-- Market snapshot (price, change %, OHLC, day range, VWAP where available).
-- News + extra context (web search summaries, optional).
-- Metrics + lightweight analysis (single stock or comparison).
-- Pluggable graph nodes (easy to swap data/news providers).
-- Debug mode (global LangChain debug + per-run stdout callbacks).
+Good. Let’s design this properly.
 
-## Project structure
+---
 
-```text
-project/
-  stock_agent.py              # tiny entrypoint (or src/main.py)
-  .env
-  src/
-    __init__.py
-    agent_state.py            # StockState, InvestState, init_state
-    config.py                 # Config + debug/bootstrap helpers
-    indices.py                # benchmark fetching (NIFTY/SENSEX later)
-    graph.py                  # build_graph() only (wiring)
-    prompts.py
-    nodes/
-      __init__.py
-      resolve_symbol.py
-      resolve_intent.py
-      fetch_stock.py
-      fetch_news.py
-      fetch_extras.py
-      compute_metrics.py
-      write_answer.py
-    analysis/
-      __init__.py
-      compare.py              # python_compare_analysis
-      fallback.py             # python_fallback_analysis
-  utils/
-    __init__.py
-    helper.py                 # pure helpers (safe_json_loads, ensure_list, etc.)
-    tools.py                  # build_tools + ToolBundle
-    logger_config.py
+# 🎯 1. First — Define the Scope Clearly
+
+You want to cover:
+
+### ✅ Stocks
+
+* NIFTY 50 constituents
+* Individual stocks like Bharti Airtel, Reliance Industries
+
+### ✅ Mutual Funds
+
+* Indian mutual funds (Direct Growth preferred)
+* SIP return analysis
+* Risk-adjusted performance
+
+---
+
+# 🧠 2. High-Level Architecture (Agentic System)
+
+You need 5 core layers:
+
+```
+User → LLM Planner → Tool Executor → Analytics Engine → Response Generator
 ```
 
-## Requirements
+---
 
-- Python 3.10+ (recommended)
-- An LLM provider/key supported by your `build_llm()` implementation (see `src/config.py`)
-- Internet access (for news/search; optional if you disable those nodes/tools)
+## 🏗 Layer 1 — Data Layer
 
-## Setup
+Use:
 
-### 1) Clone and install
+### Stocks / Indices
 
-```bash
-git clone <your-repo-url>
-cd project
+* `yfinance` (primary)
+* `nsepython` (backup for NSE live data)
 
-python -m venv .venv
-# Linux/Mac:
-source .venv/bin/activate
-# Windows:
-# .venv\Scripts\activate
+Tickers:
 
-pip install -r requirements.txt
+* Nifty 50 → `^NSEI`
+* Stocks → `<SYMBOL>.NS`
+
+---
+
+### Mutual Funds (Important)
+
+Yahoo Finance supports Indian MFs too:
+
+Example:
+
+```python
+mf = yf.Ticker("0P0000XVU3.BO")  # Example MF code
 ```
 
-If you don’t have `requirements.txt` yet, generate it once your environment is working:
+You’ll need to:
 
-```bash
-pip freeze > requirements.txt
+* Map fund names → Yahoo symbols
+* Or scrape AMFI NAV data (better long-term)
+
+---
+
+# 📊 Layer 2 — Analytics Engine (Core Brain)
+
+This is where your value comes from.
+
+For each stock/fund compute:
+
+### 📈 Returns
+
+* 1Y return
+* CAGR
+* YTD return
+
+### 📉 Risk
+
+* Volatility (std dev)
+* Beta vs Nifty
+* Max drawdown
+* Sharpe ratio
+
+### 📊 Relative Strength
+
+* Outperformance vs Nifty
+
+---
+
+Example metric engine:
+
+```python
+import numpy as np
+
+def compute_metrics(df):
+    df["returns"] = df["Close"].pct_change()
+    
+    annual_return = (df["Close"].iloc[-1] / df["Close"].iloc[0]) - 1
+    volatility = df["returns"].std() * np.sqrt(252)
+    sharpe = (df["returns"].mean() * 252) / volatility
+    
+    return {
+        "annual_return": annual_return,
+        "volatility": volatility,
+        "sharpe": sharpe
+    }
 ```
 
-### 2) Create `.env`
+This is your quantitative layer.
 
-Create a `.env` in the project root:
+---
 
-```env
-# ---- runtime ----
-LOGS_DIR=logs
-AGENT_DEBUG=0
+# 🤖 Layer 3 — Agentic Behavior
 
-# ---- persistence ----
-DATA_DIR=data
-CHECKPOINT_DB=data/checkpoints.sqlite
+Instead of simple Q&A, create specialized agents:
 
-# ---- behavior ----
-DDG_RESULTS=8
+### 1️⃣ Stock Screener Agent
 
-# ---- LLM (examples; match your src/config.py) ----
-# OPENAI_API_KEY=...
-# GROQ_API_KEY=...
-# ANTHROPIC_API_KEY=...
-# MODEL_NAME=...
-```
+* Filter Nifty 50 stocks
+* Find those with projected 12%+ historical 1Y CAGR
+* Filter low volatility
 
-Notes:
-- Keep `.env` out of git: add it to `.gitignore`.
-- Ensure `data/` and `logs/` exist or let the app create them.
+### 2️⃣ Comparison Agent
 
-## Run
+When user asks:
 
-### Basic
+> Compare Bharti Airtel and Reliance
 
-```bash
-#python stock_agent.py
-python app.py
-```
+It should:
 
-Example prompts:
+* Pull 5Y data
+* Compute CAGR
+* Compute volatility
+* Compare drawdown
+* Compare beta
 
-- `HAL`
-- `Analyze HAL stock`
-- `Compare HAL vs LT`
-- `Tata Motors news`
-- `Why is INFY falling?`
+Then respond with structured analysis.
 
-Type `exit` to quit.
+---
 
-### Debug mode
+# 🔥 Example: “Best Nifty 50 stocks for 12% growth”
 
-Debug mode should print internal agent/tool/LLM events to your terminal.
+Pipeline:
 
-```bash
-python app.py --debug
-```
+1. Fetch Nifty 50 constituents
+2. Get 3Y historical data
+3. Compute:
 
-What it typically enables:
-- Global LangChain debug/verbose flags (more logs).
-- A stdout callback handler wired into the LangGraph invocation (agent run tracing).
+   * 1Y CAGR
+   * 3Y CAGR
+   * Sharpe ratio
+4. Filter:
 
-## How it works
+   * CAGR > 12%
+   * Sharpe > 1
+   * Drawdown < 30%
+5. Rank by Sharpe
 
-The agent is a LangGraph state machine:
+Return top 5.
 
-1. **resolve_symbol**: extracts/chooses NSE symbol from user query.
-2. **resolve_intent**: decides whether user wants analysis, compare, news, etc.
-3. **fetch_stock**: fetches latest stock quote / market data.
-4. **fetch_news**: searches news and summarizes.
-5. **fetch_extras**: pulls additional context (optional).
-6. **compute_metrics**: computes derived metrics used by the final response.
-7. **write_answer**: formats the final response and analysis.
+---
 
-Core wiring lives in `src/graph.py` (only the graph wiring), while each node is isolated in `src/nodes/`.
+# 📊 Layer 4 — Mutual Fund Analysis
 
-## Configuration
+For funds compute:
 
-All configuration should come from environment variables (loaded from `.env`) and parsed by `Config.from_env()` in `src/config.py`.
+* 1Y, 3Y, 5Y CAGR
+* Rolling returns
+* Downside deviation
+* Risk vs category average
 
-Common settings:
+You can compare:
 
-- `LOGS_DIR`: where application logs go.
-- `CHECKPOINT_DB`: sqlite path for LangGraph checkpointing.
-- `AGENT_DEBUG`: `1` enables debug by default (can also be enabled with `--debug`).
+* Large cap funds
+* Mid cap funds
+* Hybrid funds
 
-## Logging
+---
 
-- App logs go to `LOGS_DIR/InvestmentAgent.log` (name depends on your `setup_logger` usage).
-- Debug mode prints execution traces to stdout.
+# 🧠 Layer 5 — LLM Integration
 
-## Development notes
+Use LLM for:
 
-### Add a new node
+* Understanding user query
+* Selecting correct tool
+* Interpreting output
+* Explaining results in human language
 
-1. Create `src/nodes/my_node.py` with a `make_my_node(...)` factory.
-2. Export it in `src/nodes/__init__.py` if you want clean imports.
-3. Wire it into `src/graph.py` by adding the node and edges.
-4. Update `stock_agent.py` to pass dependencies into `make_my_node(...)`.
+Example:
 
-### Testing (suggested)
+User:
 
-- Unit test pure helpers in `utils/helper.py`.
-- Unit test symbol resolution with a small fixture master list.
-- Integration test the graph with mocked tools (no network, deterministic outputs).
+> Best Nifty 50 stocks for 12% growth?
 
-## Security
+LLM:
 
-- Never commit `.env` or API keys.
-- Treat tool outputs (web/news) as untrusted; sanitize/validate before storing.
+* Detects: “screening query”
+* Calls: Screener tool
+* Receives structured metrics
+* Generates readable advisory response
 
-## Roadmap (ideas)
+---
 
-- Index benchmarks (NIFTY, SENSEX) in `src/indices.py`.
-- Add caching for quotes/news.
-- Add JSON output mode (`--json`) for programmatic usage.
-- Add backtesting/screeners and portfolio tracking.
+# 🧱 Suggested Tech Stack
 
-## License
+### Backend
 
-Choose a license (MIT/Apache-2.0 recommended) and add `LICENSE`.
+* Python
+* FastAPI
+* Pandas
+* Numpy
+* yfinance
+* nsepython
+
+### Agent Framework
+
+* LangChain OR
+* OpenAI function calling OR
+* Custom lightweight agent (better control)
+
+---
+
+# ⚠ Important: Financial Compliance
+
+Your system must:
+
+* Avoid “guaranteed returns”
+* Use probabilistic language
+* Mention risk factors
+* Clarify it’s data-driven analysis
+
+Example:
+
+❌ “Buy this stock, it will give 12%.”
+✅ “Based on historical data and risk metrics, these stocks show probability of 12%+ returns.”
+
+---
+
+# 🏆 Advanced Upgrade Ideas
+
+Later you can add:
+
+* Earnings growth projection
+* Fundamental ratios (PE, ROE)
+* Sector rotation analysis
+* News sentiment
+* Portfolio optimizer (Markowitz)
+
+---
+
+# 📌 What I Recommend You Build First
+
+### Phase 1 (MVP)
+
+* Stock comparison engine
+* Nifty 50 screener
+* Basic risk metrics
+* CLI interface
+
+### Phase 2
+
+* Mutual fund ranking engine
+* Portfolio builder
+
+### Phase 3
+
+* Full conversational AI agent
+* Web dashboard
+
+---
+
+# 🚀 If You Want, I Can Now:
+
+* Design full folder structure
+* Write base analytics engine
+* Build Nifty 50 screener module
+* Design agent prompt template
+* Or architect full production system
+
+Tell me your experience level:
+
+* Beginner
+* Intermediate
+* Advanced
+
+And whether this is:
+
+* Learning project
+* Startup idea
+* Internal trading tool

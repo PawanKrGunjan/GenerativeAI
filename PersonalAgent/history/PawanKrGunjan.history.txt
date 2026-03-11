@@ -520,3 +520,51 @@
 
 # 2026-03-04 09:05:57.050036
 +exit
+
+# 2026-03-08 20:02:48.348412
++correct it
++    except Exception as e:
++        LOGGER.warning(f"Graph visualization failed: str{e}.{traceback.print_exc(e)}")
++        
+
+# 2026-03-08 20:04:50.385346
++I want to use traceback to find out exact line of with hirarchy where it's failing
++
+
+# 2026-03-08 20:07:03.634473
++(G-master) pawankrgunjan@Inspiron-5490:~/Development/LEARN/StockAgent$ /home/pawankrgunjan/Development/G-master/bin/python /home/pawankrgunjan/Development/LEARN/StockAgent/agents/graphs.py
++20:06:21 [INFO] Logger initialized → /home/pawankrgunjan/Development/LEARN/StockAgent/logs/InvestmentApp_20260308_200621.log
++20:06:23 [INFO] Investment graph compiled
++20:06:23 [WARNING] Graph visualization failed: At key '__root__': Can receive only one value per step. Use an Annotated key to handle multiple values.
++For troubleshooting, visit: https://docs.langchain.com/oss/python/langgraph/errors/INVALID_CONCURRENT_GRAPH_UPDATE
++Traceback (most recent call last):
++  File "/home/pawankrgunjan/Development/LEARN/StockAgent/agents/graphs.py", line 119, in save_workflow_graph
++    mermaid = gr.get_graph().draw_mermaid()
++              ^^^^^^^^^^^^^^
++  File "/home/pawankrgunjan/Development/G-master/lib/python3.12/site-packages/langgraph/pregel/main.py", line 720, in get_graph
++    return draw_graph(
++           ^^^^^^^^^^^
++  File "/home/pawankrgunjan/Development/G-master/lib/python3.12/site-packages/langgraph/pregel/_draw.py", line 172, in draw_graph
++    updated_channels = apply_writes(
++                       ^^^^^^^^^^^^^
++  File "/home/pawankrgunjan/Development/G-master/lib/python3.12/site-packages/langgraph/pregel/_algo.py", line 296, in apply_writes
++    if channels[chan].update(vals) and next_version is not None:
++       ^^^^^^^^^^^^^^^^^^^^^^^^^^^
++  File "/home/pawankrgunjan/Development/G-master/lib/python3.12/site-packages/langgraph/channels/last_value.py", line 64, in update
++    raise InvalidUpdateError(msg)
++langgraph.errors.InvalidUpdateError: At key '__root__': Can receive only one value per step. Use an Annotated key to handle multiple values.
++For troubleshooting, visit: https://docs.langchain.com/oss/python/langgraph/errors/INVALID_CONCURRENT_GRAPH_UPDATE
++
+
+# 2026-03-08 20:25:43.534488
++sudo thermald ??
+
+# 2026-03-08 20:26:17.583555
++role of sudo thermald in ubuntu?
+
+# 2026-03-08 20:27:02.272260
++how to set
++
+
+# 2026-03-08 20:27:49.910640
++how to set temperature using sudo thermald 

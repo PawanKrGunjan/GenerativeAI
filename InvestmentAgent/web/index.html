@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Trishul Trader | AI Stock Market Advisor</title>
+
+<link rel="icon" type="image/svg+xml" href="/static/om.svg">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+<link rel="stylesheet" href="/static/style.css">
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+</head>
+
+<body>
+
+<div class="app">
+
+<header class="topbar glass">
+
+<div class="brand">
+<img src="/static/om.svg" class="logo">
+
+<div>
+<h1>Trishul Trader</h1>
+<span>AI Market Advisor</span>
+</div>
+</div>
+
+<div class="topbar-right">
+
+<div class="status">
+<span class="status-dot"></span>
+<span id="statusText">Connected</span>
+</div>
+
+<button id="themeToggle" class="theme-btn">
+<i class="fas fa-moon"></i>
+</button>
+
+</div>
+
+</header>
+
+<div class="workspace">
+
+<!-- LEFT PANEL -->
+
+<!-- LEFT PANEL -->
+
+<aside class="panel glass">
+
+<h2>📊 Market Overview</h2>
+
+<div class="trend">
+
+<div class="trend-label nifty-label">
+NIFTY 50
+</div>
+
+<div class="chart-box">
+<canvas id="niftyChart"></canvas>
+</div>
+
+</div>
+
+<div class="trend">
+
+<div class="trend-label sensex-label">
+SENSEX
+</div>
+
+<div class="chart-box">
+<canvas id="sensexChart"></canvas>
+</div>
+
+</div>
+
+</aside>
+<!-- CHAT PANEL -->
+
+<main class="chat-panel glass">
+
+<div id="chat" class="chat-messages"></div>
+
+<div class="chat-input">
+
+<input
+id="messageInput"
+type="text"
+placeholder="Ask about Reliance, Nifty trend, or upload portfolio..."
+autocomplete="off"
+/>
+
+<label for="fileInput" class="upload-btn">
+<i class="fa fa-upload"></i>
+</label>
+
+<input id="fileInput" type="file" hidden accept=".xlsx,.xls,.csv,.json">
+
+<button id="sendButton">
+<i class="fa fa-paper-plane"></i>
+</button>
+
+</div>
+
+</main>
+
+<!-- RIGHT PANEL -->
+
+<aside class="panel glass">
+
+<h3>📁 Portfolio</h3>
+
+<div class="portfolio-input">
+
+<input id="symbolInput" placeholder="Stock Symbol (e.g. RELIANCE)">
+<input id="qtyInput" type="number" placeholder="Qty">
+
+<button id="addStockBtn">
+Add
+</button>
+
+</div>
+
+<table id="portfolioTable">
+
+<thead>
+<tr>
+<th>Symbol</th>
+<th>Qty</th>
+<th>Price</th>
+<th>Total</th>
+</tr>
+</thead>
+
+<tbody></tbody>
+
+</table>
+
+<h3>🧠 Agent Reasoning</h3>
+
+<div id="agentThoughts" class="reasoning">
+Waiting for analysis...
+</div>
+
+</aside>
+
+</div>
+
+</div>
+
+<script src="/static/script.js"></script>
+
+</body>
+</html>

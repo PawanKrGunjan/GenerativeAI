@@ -1,0 +1,16 @@
+# Core agent framework
+langgraph
+langchain
+langchain-core
+nsepython
+nsepy
+# Env loading
+python-dotenv
+
+# Web/news/search helpers (commonly needed)
+duckduckgo-search
+requests
+
+# Utilities you typically end up using in nodes/tools
+pydantic
+tenacity
