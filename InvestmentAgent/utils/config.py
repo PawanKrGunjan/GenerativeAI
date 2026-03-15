@@ -24,7 +24,7 @@ ROOT_DIR: Final[Path] = Path(os.getenv("ROOT_DIR", ".")).resolve()
 DATA_DIR: Final[Path] = ROOT_DIR / "data"
 LOG_DIR: Final[Path] = ROOT_DIR / "logs"
 GRAPH_DIR: Final[Path] = ROOT_DIR / "graphs"
-#HISTORY_DIR: Final[Path] = ROOT_DIR / "history"
+MEMORY_SAVE_DIR: Final[Path] = ROOT_DIR / "memory"
 
 # Important data files
 NIFTY_50_FILE: Final[Path] = DATA_DIR / "ind_nifty50list.csv"

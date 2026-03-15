@@ -6,25 +6,23 @@ config:
 ---
 graph TD;
 	__start__([<p>__start__</p>]):::first
-	resolve_symbols(resolve_symbols)
-	load_memory(load_memory)
 	agent(agent)
 	tools(tools)
+	load_memory(load_memory)
 	indicator_cache(indicator_cache)
 	sentiment(sentiment)
 	reflect(reflect)
 	memory_update(memory_update)
 	__end__([<p>__end__</p>]):::last
-	__start__ --> resolve_symbols;
+	__start__ --> agent;
 	agent -.-> __end__;
 	agent -.-> reflect;
 	agent -.-> tools;
 	indicator_cache --> sentiment;
-	load_memory --> agent;
+	load_memory --> indicator_cache;
 	reflect --> memory_update;
-	resolve_symbols --> load_memory;
 	sentiment --> agent;
-	tools --> indicator_cache;
+	tools --> load_memory;
 	memory_update --> __end__;
 	classDef default fill:#f2f0ff,line-height:1.2
 	classDef first fill-opacity:0

@@ -1,300 +1,412 @@
-This is a **serious project** — basically building a mini-Indian version of a quant research + advisory engine.
+# 📈 InvestmentAgent – AI Stock Market Advisor
 
-You want an **Agentic AI system** that:
+An **enterprise-grade AI agent system** for analyzing Indian stock market equities (NSE & BSE) using **LLMs, LangGraph, and tool-based reasoning**.
 
-* Understands natural language queries
-* Fetches live Indian market data
-* Analyzes stocks + mutual funds
-* Calculates returns, risk, CAGR, drawdown, volatility
-* Produces reasoned recommendations
-
-Good. Let’s design this properly.
+The system autonomously gathers stock information, performs structured reasoning, and generates **disciplined investment signals (BUY / HOLD / SELL)** while strictly avoiding hallucinated financial data.
 
 ---
 
-# 🎯 1. First — Define the Scope Clearly
+# 🚀 Overview
 
-You want to cover:
+InvestmentAgent is an **LLM-powered autonomous agent** designed to:
 
-### ✅ Stocks
+* Identify companies mentioned in user queries
+* Resolve their NSE/BSE ticker symbols
+* Fetch real-time stock information
+* Analyze price data
+* Provide structured investment recommendations
 
-* NIFTY 50 constituents
-* Individual stocks like Bharti Airtel, Reliance Industries
+The system is built with a **LangGraph agent architecture**, ensuring deterministic workflows, tool validation, and robust error handling.
 
-### ✅ Mutual Funds
-
-* Indian mutual funds (Direct Growth preferred)
-* SIP return analysis
-* Risk-adjusted performance
+This project demonstrates **production-level agent design** for financial analysis applications.
 
 ---
 
-# 🧠 2. High-Level Architecture (Agentic System)
+# 🧠 Key Features
 
-You need 5 core layers:
+### AI Agent Capabilities
+
+✔ Autonomous multi-step reasoning
+✔ Tool-based stock data retrieval
+✔ Symbol resolution for Indian equities
+✔ Strict hallucination prevention
+✔ Structured investment advice generation
+✔ Reflection-based memory learning
+
+---
+
+### Engineering Features
+
+✔ **LangGraph agent workflow**
+✔ **Tool registry architecture**
+✔ **Memory system with embeddings**
+✔ **Structured logging system**
+✔ **Enterprise-grade prompt safety**
+✔ **Loop detection & recovery logic**
+
+---
+
+# 🏗 System Architecture
 
 ```
-User → LLM Planner → Tool Executor → Analytics Engine → Response Generator
+User Query
+    │
+    ▼
+LangGraph Agent
+    │
+    ├── Company Identification
+    │
+    ├── Symbol Resolution Tool
+    │
+    ├── Market Data Tool
+    │
+    ▼
+LLM Reasoning Engine
+    │
+    ▼
+Structured Investment Advice
+    │
+    ▼
+Memory + Reflection Storage
+```
+
+The agent uses **deterministic tool execution** to ensure all financial information is retrieved from trusted sources rather than guessed by the LLM.
+
+---
+
+# 📂 Project Structure
+
+```
+InvestmentAgent/
+│
+├── agents/
+│   └── investment_agent.py
+│
+├── tools/
+│   ├── tool_registry.py
+│   ├── search_tools.py
+│   └── stock_tools.py
+│
+├── memory/
+│   └── store_memory.py
+│
+├── utils/
+│   ├── config.py
+│   ├── logger.py
+│   └── db_connect.py
+│
+├── api/
+│   └── API endpoints for integration
+│
+├── web/
+│   └── UI components
+│
+├── chat/
+│   └── chat orchestration layer
+│
+├── analysis/
+│   └── financial analysis utilities
+│
+├── data/
+│   └── datasets and company records
+│
+├── graphs/
+│   └── LangGraph visualizations
+│
+├── tests/
+│   └── unit tests
+│
+├── logs/
+│   └── runtime logs
+│
+├── run.py
+├── terminal_run.py
+└── requirements.txt
 ```
 
 ---
 
-## 🏗 Layer 1 — Data Layer
+# ⚙️ Technology Stack
 
-Use:
-
-### Stocks / Indices
-
-* `yfinance` (primary)
-* `nsepython` (backup for NSE live data)
-
-Tickers:
-
-* Nifty 50 → `^NSEI`
-* Stocks → `<SYMBOL>.NS`
+| Layer                | Technology                |
+| -------------------- | ------------------------- |
+| AI Framework         | LangGraph                 |
+| LLM Interface        | LangChain                 |
+| Embeddings           | Custom embedding pipeline |
+| Programming Language | Python                    |
+| Database             | SQL / Memory Store        |
+| Logging              | Structured logging        |
+| Deployment           | Docker-ready              |
 
 ---
 
-### Mutual Funds (Important)
+# 🤖 Agent Workflow
 
-Yahoo Finance supports Indian MFs too:
+The agent follows a strict multi-step process:
+
+### Step 1 — Query Understanding
+
+The agent analyzes the user request.
 
 Example:
 
-```python
-mf = yf.Ticker("0P0000XVU3.BO")  # Example MF code
+```
+Should I purchase HDFC Bank share?
 ```
 
-You’ll need to:
-
-* Map fund names → Yahoo symbols
-* Or scrape AMFI NAV data (better long-term)
-
 ---
 
-# 📊 Layer 2 — Analytics Engine (Core Brain)
+### Step 2 — Symbol Resolution
 
-This is where your value comes from.
+The agent resolves the company name to its ticker.
 
-For each stock/fund compute:
-
-### 📈 Returns
-
-* 1Y return
-* CAGR
-* YTD return
-
-### 📉 Risk
-
-* Volatility (std dev)
-* Beta vs Nifty
-* Max drawdown
-* Sharpe ratio
-
-### 📊 Relative Strength
-
-* Outperformance vs Nifty
-
----
-
-Example metric engine:
-
-```python
-import numpy as np
-
-def compute_metrics(df):
-    df["returns"] = df["Close"].pct_change()
-    
-    annual_return = (df["Close"].iloc[-1] / df["Close"].iloc[0]) - 1
-    volatility = df["returns"].std() * np.sqrt(252)
-    sharpe = (df["returns"].mean() * 252) / volatility
-    
-    return {
-        "annual_return": annual_return,
-        "volatility": volatility,
-        "sharpe": sharpe
-    }
+```
+HDFC Bank → HDFCBANK.NS
 ```
 
-This is your quantitative layer.
-
 ---
 
-# 🤖 Layer 3 — Agentic Behavior
+### Step 3 — Market Data Retrieval
 
-Instead of simple Q&A, create specialized agents:
-
-### 1️⃣ Stock Screener Agent
-
-* Filter Nifty 50 stocks
-* Find those with projected 12%+ historical 1Y CAGR
-* Filter low volatility
-
-### 2️⃣ Comparison Agent
-
-When user asks:
-
-> Compare Bharti Airtel and Reliance
-
-It should:
-
-* Pull 5Y data
-* Compute CAGR
-* Compute volatility
-* Compare drawdown
-* Compare beta
-
-Then respond with structured analysis.
-
----
-
-# 🔥 Example: “Best Nifty 50 stocks for 12% growth”
-
-Pipeline:
-
-1. Fetch Nifty 50 constituents
-2. Get 3Y historical data
-3. Compute:
-
-   * 1Y CAGR
-   * 3Y CAGR
-   * Sharpe ratio
-4. Filter:
-
-   * CAGR > 12%
-   * Sharpe > 1
-   * Drawdown < 30%
-5. Rank by Sharpe
-
-Return top 5.
-
----
-
-# 📊 Layer 4 — Mutual Fund Analysis
-
-For funds compute:
-
-* 1Y, 3Y, 5Y CAGR
-* Rolling returns
-* Downside deviation
-* Risk vs category average
-
-You can compare:
-
-* Large cap funds
-* Mid cap funds
-* Hybrid funds
-
----
-
-# 🧠 Layer 5 — LLM Integration
-
-Use LLM for:
-
-* Understanding user query
-* Selecting correct tool
-* Interpreting output
-* Explaining results in human language
+The system fetches current market data.
 
 Example:
 
-User:
-
-> Best Nifty 50 stocks for 12% growth?
-
-LLM:
-
-* Detects: “screening query”
-* Calls: Screener tool
-* Receives structured metrics
-* Generates readable advisory response
+```
+Price
+Volume
+Change %
+Timestamp
+```
 
 ---
 
-# 🧱 Suggested Tech Stack
+### Step 4 — Reasoning
 
-### Backend
+The LLM performs analysis using:
 
-* Python
-* FastAPI
-* Pandas
-* Numpy
-* yfinance
-* nsepython
-
-### Agent Framework
-
-* LangChain OR
-* OpenAI function calling OR
-* Custom lightweight agent (better control)
+* retrieved market data
+* historical context
+* stored memory reflections
 
 ---
 
-# ⚠ Important: Financial Compliance
+### Step 5 — Structured Investment Advice
 
-Your system must:
-
-* Avoid “guaranteed returns”
-* Use probabilistic language
-* Mention risk factors
-* Clarify it’s data-driven analysis
+The agent outputs standardized investment advice.
 
 Example:
 
-❌ “Buy this stock, it will give 12%.”
-✅ “Based on historical data and risk metrics, these stocks show probability of 12%+ returns.”
+```
+Company: HDFC Bank Ltd
+Ticker: HDFCBANK.NS
+Price: ₹1,602.40
+Updated: 15-Mar-2026 15:30 IST
+
+Signal: HOLD
+Confidence: 74/100
+
+Pointwise Reasoning:
+• Price stabilizing after recent correction
+• Strong banking fundamentals
+• Volume consistent with institutional participation
+• Valuation currently near sector median
+```
 
 ---
 
-# 🏆 Advanced Upgrade Ideas
+# 🧩 Tools System
 
-Later you can add:
+The agent interacts with the external world using **tools**.
 
-* Earnings growth projection
-* Fundamental ratios (PE, ROE)
-* Sector rotation analysis
-* News sentiment
-* Portfolio optimizer (Markowitz)
+### Available Tools
 
----
+| Tool                | Purpose                            |
+| ------------------- | ---------------------------------- |
+| lookup_stock_symbol | Resolve company name to NSE symbol |
+| get_stock_info      | Retrieve latest market data        |
+| memory reflection   | Store analysis insights            |
 
-# 📌 What I Recommend You Build First
-
-### Phase 1 (MVP)
-
-* Stock comparison engine
-* Nifty 50 screener
-* Basic risk metrics
-* CLI interface
-
-### Phase 2
-
-* Mutual fund ranking engine
-* Portfolio builder
-
-### Phase 3
-
-* Full conversational AI agent
-* Web dashboard
+Tools ensure the agent **never fabricates financial data**.
 
 ---
 
-# 🚀 If You Want, I Can Now:
+# 🧠 Memory System
 
-* Design full folder structure
-* Write base analytics engine
-* Build Nifty 50 screener module
-* Design agent prompt template
-* Or architect full production system
+The agent maintains **reflection memory** to store previous analyses.
 
-Tell me your experience level:
+Memory includes:
 
-* Beginner
-* Intermediate
-* Advanced
+```
+timestamp
+company
+symbol
+previous advice
+analysis summary
+```
 
-And whether this is:
+This enables:
 
-* Learning project
-* Startup idea
-* Internal trading tool
+* contextual reasoning
+* pattern recognition
+* historical insight
+
+---
+
+# 📊 Graph Visualization
+
+LangGraph automatically generates workflow diagrams.
+
+Location:
+
+```
+graphs/investment_agent_optimized.png
+```
+
+This helps developers visualize agent logic.
+
+---
+
+# 🖥 Running the Project
+
+## 1️⃣ Install dependencies
+
+```
+pip install -r requirements.txt
+```
+
+---
+
+## 2️⃣ Run the agent (terminal mode)
+
+```
+python agents/investment_agent.py
+```
+
+Example interaction:
+
+```
+You: Should I buy Infosys stock?
+
+Advisor:
+Company: Infosys Ltd
+Ticker: INFY.NS
+Price: ₹1,512
+Signal: HOLD
+Confidence: 68/100
+```
+
+---
+
+## 3️⃣ Run application
+
+```
+python run.py
+```
+
+---
+
+# 📜 Logging
+
+Logs are stored in:
+
+```
+logs/
+```
+
+Example log output:
+
+```
+NODE → REACT (attempt 1)
+Executing tool: lookup_stock_symbol
+Stored price data for HDFCBANK.NS
+Final advice generated successfully
+```
+
+---
+
+# 🔒 Safety & Guardrails
+
+The system enforces strict rules:
+
+* No hallucinated prices
+* No guessed ticker symbols
+* Mandatory tool validation
+* Structured investment output
+* Loop detection to prevent infinite reasoning
+
+---
+
+# 🧪 Testing
+
+Run tests with:
+
+```
+pytest tests/
+```
+
+---
+
+# 🐳 Docker Support
+
+A Docker environment can be built using:
+
+```
+docker build -t investment-agent .
+```
+
+Run container:
+
+```
+docker run investment-agent
+```
+
+---
+
+# 📈 Future Improvements
+
+Planned enhancements:
+
+* real-time market data streaming
+* technical indicator tools
+* portfolio optimization agent
+* risk scoring model
+* multi-agent research system
+* backtesting engine
+
+---
+
+# 🤝 Contributing
+
+Contributions are welcome.
+
+Please follow:
+
+1. Fork the repository
+2. Create a feature branch
+3. Submit a pull request
+
+---
+
+# 📄 License
+
+MIT License
+
+---
+
+# 👨‍💻 Author
+
+**Pawan Kumar Gunjan**
+
+AI Engineer | Generative AI Developer
+
+---
+
+# ⭐ Acknowledgements
+
+Built using:
+
+* LangGraph
+* LangChain
+* Python AI ecosystem
+* Open-source LLM tooling

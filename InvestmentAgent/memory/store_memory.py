@@ -19,13 +19,13 @@ import threading
 from psycopg.rows import dict_row
 
 from utils.db_connect import get_connection
-from utils.config import DATA_DIR
+from utils.config import DATA_DIR, MEMORY_SAVE_DIR
 from utils.logger import LOGGER
 # ─────────────────────────────────────────────
 # Paths
 # ─────────────────────────────────────────────
 
-MEMORY_DIR = DATA_DIR / "memory" / "symbols"
+MEMORY_DIR = MEMORY_SAVE_DIR / "Saved_Memory" / "symbols"
 MEMORY_DIR.mkdir(parents=True, exist_ok=True)
 
 # ─────────────────────────────────────────────
@@ -261,3 +261,62 @@ def get_company_name(symbol: str) -> str:
     mem = load_symbol_memory(sym)
 
     return mem.get("company_name", "Unknown Company")
+
+
+# ─────────────────────────────────────────────
+# Conversation History
+# ─────────────────────────────────────────────
+
+CONVERSATION_DIR = MEMORY_SAVE_DIR / "Saved_Memory" / "conversations"
+CONVERSATION_DIR.mkdir(parents=True, exist_ok=True)
+
+def _get_conversation_path(user_id: str):
+    return CONVERSATION_DIR / f"{user_id}.json"
+
+def load_conversation_history(user_id: str):
+    path = _get_conversation_path(user_id)
+    if not path.exists():
+        return []
+    try:
+        with path.open("r", encoding="utf-8") as f:
+            return json.load(f)  # list of {"role": "human/ai", "content": "..."}
+    except Exception as e:
+        LOGGER.warning(f"Failed to load conversation history for {user_id}: {e}")
+        return []
+
+def save_conversation_history(user_id: str, messages: list):
+    path = _get_conversation_path(user_id)
+    serializable = []
+    for m in messages:
+        role = "human" if m.__class__.__name__ == "HumanMessage" else "ai"
+        serializable.append({"role": role, "content": m.content})
+    try:
+        with path.open("w", encoding="utf-8") as f:
+            json.dump(serializable, f, indent=2, ensure_ascii=False)
+    except Exception as e:
+        LOGGER.error(f"Failed to save conversation history for {user_id}: {e}")
+
+TOOL_RESULT_DIR = MEMORY_SAVE_DIR / "Saved_Memory" / "tools"
+TOOL_RESULT_DIR.mkdir(parents=True, exist_ok=True)
+
+def _get_tool_path(symbol: str, tool_name: str):
+    return TOOL_RESULT_DIR / f"{symbol}_{tool_name}.json"
+
+def save_tool_result(symbol: str, tool_name: str, data: dict):
+    path = _get_tool_path(symbol, tool_name)
+    try:
+        with path.open("w", encoding="utf-8") as f:
+            json.dump(data, f, indent=2, default=str, ensure_ascii=False)
+    except Exception as e:
+        LOGGER.error(f"Failed to save tool result {tool_name} for {symbol}: {e}")
+
+def load_tool_result(symbol: str, tool_name: str):
+    path = _get_tool_path(symbol, tool_name)
+    if not path.exists():
+        return None
+    try:
+        with path.open("r", encoding="utf-8") as f:
+            return json.load(f)
+    except Exception as e:
+        LOGGER.warning(f"Failed to load tool result {tool_name} for {symbol}: {e}")
+        return None

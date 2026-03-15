@@ -1,324 +1,83 @@
 class TrishulTrader {
 
-/*
 constructor(){
 
-this.chat = document.getElementById("chat")
-this.status = document.getElementById("statusText")
+this.chat = document.getElementById("chat");
+this.status = document.getElementById("statusText");
 
-this.niftyChart = null
-this.sensexChart = null
+this.sessionId = localStorage.getItem("session_id") || crypto.randomUUID();
+localStorage.setItem("session_id", this.sessionId);
 
-this.portfolio = []
+this.niftyChart = null;
+this.sensexChart = null;
 
-this.bindEvents()
-this.initThemeToggle()
-this.initPortfolio()
+this.portfolio = [];
 
-this.loadMarketCharts()
+this.bindEvents();
+this.initTheme();
+this.initPortfolio();
 
-setInterval(()=>this.loadMarketCharts(),60000)
+this.loadPortfolio();
+this.loadMarketCharts();
 
-this.welcome()
+setInterval(()=>this.loadMarketCharts(),60000);
+setInterval(()=>this.updatePortfolioPrices(),300000);
 
-}
-*/
-constructor(){
-
-this.chat = document.getElementById("chat")
-this.status = document.getElementById("statusText")
-
-this.niftyChart = null
-this.sensexChart = null
-
-this.portfolio = []
-
-this.bindEvents()
-this.initThemeToggle()
-
-this.initPortfolio()
-
-this.loadPortfolio()   // ⭐ load saved portfolio
-
-this.loadMarketCharts()
-
-setInterval(()=>this.loadMarketCharts(),60000)
-
-this.welcome()
+this.welcome();
 
 }
+
+
+
+
+
+
 
 /* ---------------- EVENTS ---------------- */
 
 bindEvents(){
 
-document.getElementById("sendButton")
-.addEventListener("click",()=>this.send())
+const sendBtn = document.getElementById("sendButton");
+const input = document.getElementById("messageInput");
+const fileInput = document.getElementById("fileInput");
 
-document.getElementById("messageInput")
-.addEventListener("keypress",(e)=>{
-if(e.key==="Enter"){
-e.preventDefault()
-this.send()
+sendBtn?.addEventListener("click",()=>this.send());
+
+input?.addEventListener("keydown",(e)=>{
+if(e.key==="Enter" && !e.shiftKey){
+e.preventDefault();
+this.send();
 }
-})
+});
 
-document.getElementById("fileInput")
-.addEventListener("change",(e)=>{
-const file = e.target.files[0]
-if(file) this.uploadPortfolio(file)
-})
-
-}
-
-/* ---------------- FILE UPLOAD ---------------- */
-
-async uploadPortfolio(file){
-
-this.addMessage(`📁 Uploading portfolio: ${file.name}`,"user")
-
-this.status.innerText="Uploading..."
-
-const form=new FormData()
-form.append("message","Analyze my portfolio")
-form.append("file",file)
-
-try{
-
-const res=await fetch("/chat/",{
-method:"POST",
-body:form
-})
-
-const data=await res.json()
-
-this.typeAI(data.answer)
-
-this.showUploadedFile(file.name)
-
-this.status.innerText="Ready"
-
-}catch(err){
-
-this.addMessage("❌ Upload failed","ai")
-this.status.innerText="Error"
+fileInput?.addEventListener("change",(e)=>{
+const file = e.target.files?.[0];
+if(file) this.uploadPortfolio(file);
+e.target.value="";
+});
 
 }
 
-}
 
-/* ---------------- SHOW UPLOADED FILE ---------------- */
 
-showUploadedFile(name){
 
-const panel=document.getElementById("portfolioList")
 
-panel.innerHTML=`
 
-<div class="portfolio-item">
-<strong>${name}</strong>
-<br>
-<span>Portfolio uploaded</span>
-</div>
-`
 
-}
-
-/* ---------------- PORTFOLIO SYSTEM ---------------- */
-initPortfolio(){
-
-document.getElementById("addStockBtn")
-.addEventListener("click",()=>{
-
-const symbol=document.getElementById("symbolInput").value.toUpperCase()
-const qty=parseFloat(document.getElementById("qtyInput").value)
-
-if(!symbol || !qty) return
-
-this.portfolio.push({
-symbol:symbol,
-qty:qty
-})
-
-this.renderPortfolioTable()
-
-this.savePortfolio() // ⭐ save to backend
-
-})
-
-/* refresh every 30 minutes */
-
-setInterval(()=>this.updatePortfolioPrices(),1800000)
-
-}
-/* ---------------- LOAD PORTFOLIO FROM BACKEND ---------------- */
-
-async loadPortfolio(){
-
-try{
-
-const res = await fetch("/portfolio/")
-const data = await res.json()
-
-this.portfolio = data.portfolio || []
-
-if(this.portfolio.length){
-this.renderPortfolioTable()
-}
-
-}catch(err){
-
-console.error("Portfolio load failed")
-
-}
-
-}
-
-/* ---------------- SAVE PORTFOLIO TO BACKEND ---------------- */
-
-async savePortfolio(){
-
-try{
-
-await fetch("/portfolio/save",{
-
-method:"POST",
-
-headers:{
-"Content-Type":"application/json"
-},
-
-body:JSON.stringify({
-portfolio:this.portfolio
-})
-
-})
-
-}catch(err){
-
-console.error("Portfolio save failed")
-
-}
-
-}
-
-/* ---------------- RENDER PORTFOLIO TABLE ---------------- */
-
-renderPortfolioTable(){
-
-const tbody=document.querySelector("#portfolioTable tbody")
-
-tbody.innerHTML=""
-
-this.portfolio.forEach((stock,i)=>{
-
-const row=document.createElement("tr")
-
-row.innerHTML=`
-
-<td>${stock.symbol}</td>
-<td>${stock.qty}</td>
-<td id="price-${i}">Loading...</td>
-<td id="value-${i}">-</td>
-
-`
-
-tbody.appendChild(row)
-
-})
-
-this.updatePortfolioPrices()
-
-}
-
-/* ---------------- UPDATE PORTFOLIO PRICES ---------------- */
-async updatePortfolioPrices(){
-
-for(let i=0;i<this.portfolio.length;i++){
-
-const stock=this.portfolio[i]
-
-try{
-
-const res = await fetch(`/market/quote/${stock.symbol}`)
-const data = await res.json()
-
-if(data.status !== "success") throw "API error"
-
-const price = parseFloat(data.data.last_price)
-
-const prev = data.data.previous_close
-? parseFloat(data.data.previous_close)
-: price
-
-const trend = price > prev ? "▲" : "▼"
-const color = price > prev ? "#22c55e" : "#ef4444"
-
-const total = price * stock.qty
-
-document.getElementById(`price-${i}`).innerHTML =
-`<span style="color:${color}">₹${price.toFixed(2)} ${trend}</span>`
-
-document.getElementById(`value-${i}`).innerText =
-`₹${total.toFixed(2)}`
-
-}catch(err){
-
-document.getElementById(`price-${i}`).innerText="Error"
-
-}
-
-}
-
-}
-
-/* ---------------- THEME ---------------- */
-
-initThemeToggle(){
-
-const btn=document.getElementById("themeToggle")
-
-const saved=localStorage.getItem("theme")||"dark"
-
-document.body.classList.remove("theme-dark","theme-light")
-document.body.classList.add(`theme-${saved}`)
-
-btn.innerHTML=saved==="dark"
-?'<i class="fas fa-sun"></i>'
-:'<i class="fas fa-moon"></i>'
-
-btn.addEventListener("click",()=>{
-
-const isDark=document.body.classList.contains("theme-dark")
-
-document.body.classList.toggle("theme-dark")
-document.body.classList.toggle("theme-light")
-
-const newTheme=isDark?"light":"dark"
-
-localStorage.setItem("theme",newTheme)
-
-btn.innerHTML=newTheme==="dark"
-?'<i class="fas fa-sun"></i>'
-:'<i class="fas fa-moon"></i>'
-
-})
-
-}
-
-/* ---------------- CHAT UI ---------------- */
+/* ---------------- CHAT ---------------- */
 
 scrollBottom(){
-this.chat.scrollTop=this.chat.scrollHeight
+requestAnimationFrame(()=>{
+this.chat.scrollTop = this.chat.scrollHeight;
+});
 }
 
 addMessage(text,type){
 
-const div=document.createElement("div")
-div.className=`message ${type}`
+const div = document.createElement("div");
+div.className = `message ${type}`;
 
-div.innerHTML=`
-
+div.innerHTML = `
 <div class="avatar">
 <i class="fas ${type==="ai"?"fa-robot":"fa-user"}"></i>
 </div>
@@ -326,185 +85,486 @@ div.innerHTML=`
 <div class="bubble">${text}</div>
 <div class="message-time">${new Date().toLocaleTimeString()}</div>
 </div>
-`
+`;
 
-this.chat.appendChild(div)
-this.scrollBottom()
+this.chat.appendChild(div);
+this.scrollBottom();
+
+}
+
+formatAI(text){
+
+if(!text) return "";
+
+text = text
+.replace(/Stock-Specific Advice/g,"## 📊 Stock Advice")
+.replace(/Signal:/g,"**Signal:**")
+.replace(/Confidence:/g,"**Confidence:**")
+.replace(/Pointwise Reasoning:/g,"### Reasoning");
+
+return marked.parse(text);
 
 }
 
 typeAI(text){
 
-const div=document.createElement("div")
-div.className="message ai"
+if(!text){
+this.addMessage("No response received.","ai");
+return;
+}
+
+const div = document.createElement("div");
+div.className="message ai";
 
 div.innerHTML=`
+<div class="avatar"><i class="fas fa-robot"></i></div>
+<div><div class="bubble"></div></div>
+`;
 
-<div class="avatar">
-<i class="fas fa-robot"></i>
-</div>
-<div>
-<div class="bubble"></div>
-</div>
-`
+const bubble = div.querySelector(".bubble");
 
-const bubble=div.querySelector(".bubble")
+this.chat.appendChild(div);
 
-this.chat.appendChild(div)
+let i=0;
 
-let i=0
+const type=()=>{
 
-const typing=()=>{
+if(i>=text.length){
+bubble.innerHTML = this.formatAI(text);
+this.scrollBottom();
+return;
+}
 
-if(i<text.length){
+bubble.textContent += text[i];
+i++;
 
-bubble.textContent+=text[i]
-i++
+this.scrollBottom();
+setTimeout(type,12);
 
-this.scrollBottom()
+};
 
-setTimeout(typing,15)
+type();
 
 }
 
-}
 
-typing()
 
-}
+
+
+
 
 /* ---------------- SEND MESSAGE ---------------- */
 
 async send(){
 
-const input=document.getElementById("messageInput")
+const input = document.getElementById("messageInput");
+const msg = input.value.trim();
 
-const msg=input.value.trim()
+if(!msg) return;
 
-if(!msg) return
+this.addMessage(msg,"user");
+input.value="";
 
-this.addMessage(msg,"user")
+this.status.innerText="Thinking...";
 
-input.value=""
-
-this.status.innerText="Thinking..."
+const form = new FormData();
+form.append("message",msg);
+form.append("session_id",this.sessionId);
 
 try{
 
-const form=new FormData()
-form.append("message",msg)
-
-const res=await fetch("/chat/",{
+const res = await fetch("/chat/",{
 method:"POST",
 body:form
-})
+});
 
-const data=await res.json()
+if(!res.ok) throw new Error();
 
-this.typeAI(data.answer)
+const data = await res.json();
 
-this.status.innerText="Ready"
+this.typeAI(data.answer);
+this.status.innerText="Ready";
 
 }catch(err){
 
-this.addMessage("❌ Server error","ai")
-this.status.innerText="Error"
+console.error(err);
+this.addMessage("❌ Server error.","ai");
+this.status.innerText="Error";
 
 }
 
 }
 
-/* ---------------- MARKET DATA ---------------- */
 
-getTrend(prices){
 
-if(prices.length<2) return "neutral"
 
-const last=prices[prices.length-1]
-const prev=prices[prices.length-2]
 
-return last>prev?"up":"down"
+
+
+/* ---------------- FILE UPLOAD ---------------- */
+
+async uploadPortfolio(file){
+
+this.addMessage(`📁 Uploading ${file.name}`,"user");
+this.status.innerText="Uploading...";
+
+const form = new FormData();
+form.append("message","Analyze my portfolio");
+form.append("session_id",this.sessionId);
+form.append("file",file);
+
+try{
+
+const res = await fetch("/chat/",{
+method:"POST",
+body:form
+});
+
+if(!res.ok) throw new Error();
+
+const data = await res.json();
+
+this.typeAI(data.answer);
+this.status.innerText="Ready";
+
+}catch(err){
+
+console.error(err);
+this.addMessage("❌ Upload failed.","ai");
+this.status.innerText="Error";
 
 }
 
-applyTheme(trend){
+}
 
-document.body.classList.remove("market-up","market-down")
 
-document.body.classList.add(trend==="up"?"market-up":"market-down")
+
+
+
+
+
+/* ---------------- PORTFOLIO ---------------- */
+
+initPortfolio(){
+
+const btn = document.getElementById("addStockBtn");
+
+btn?.addEventListener("click",()=>{
+
+const symbolInput = document.getElementById("symbolInput");
+const qtyInput = document.getElementById("qtyInput");
+
+const symbol = symbolInput.value.trim().toUpperCase();
+const qty = Number(qtyInput.value);
+
+if(!symbol || !qty || qty<=0){
+this.addMessage("Enter valid symbol & quantity.","ai");
+return;
+}
+
+this.portfolio.push({symbol,qty});
+
+symbolInput.value="";
+qtyInput.value="";
+
+this.renderPortfolio();
+this.savePortfolio();
+
+});
 
 }
 
-/* ---------------- LOAD CHARTS ---------------- */
+async loadPortfolio(){
+
+try{
+
+const res = await fetch("/portfolio/");
+if(!res.ok) return;
+
+const data = await res.json();
+
+this.portfolio = data?.portfolio || [];
+
+if(this.portfolio.length){
+this.renderPortfolio();
+}
+
+}catch(err){
+console.error(err);
+}
+
+}
+
+async savePortfolio(){
+
+try{
+
+await fetch("/portfolio/save",{
+method:"POST",
+headers:{"Content-Type":"application/json"},
+body:JSON.stringify({portfolio:this.portfolio})
+});
+
+}catch(err){
+console.error(err);
+}
+
+}
+
+renderPortfolio(){
+
+const tbody = document.querySelector("#portfolioTable tbody");
+if(!tbody) return;
+
+tbody.innerHTML="";
+
+this.portfolio.forEach((s,i)=>{
+
+const row = document.createElement("tr");
+
+row.innerHTML=`
+<td>${s.symbol}</td>
+<td>${s.qty}</td>
+<td id="price-${i}">Loading...</td>
+<td id="value-${i}">-</td>
+`;
+
+tbody.appendChild(row);
+
+});
+
+this.updatePortfolioPrices();
+
+}
+
+async updatePortfolioPrices(){
+
+if(!this.portfolio.length) return;
+
+await Promise.all(
+
+this.portfolio.map(async(stock,i)=>{
+
+const priceEl = document.getElementById(`price-${i}`);
+const valueEl = document.getElementById(`value-${i}`);
+
+if(!priceEl || !valueEl) return;
+
+try{
+
+const symbol = stock.symbol.endsWith(".NS")
+? stock.symbol
+: `${stock.symbol}.NS`;
+
+const res = await fetch(`/market/quote/${symbol}`);
+const data = await res.json();
+
+if(data.status!=="success") throw new Error();
+
+const price = Number(data.data?.price);
+const prev = data.data?.previous_close ?? price;
+
+if(!price || isNaN(price)){
+priceEl.textContent="N/A";
+valueEl.textContent="—";
+return;
+}
+
+const total = price * stock.qty;
+
+const arrow = price>prev ? "▲" : price<prev ? "▼" : "→";
+const color = price>prev ? "#22c55e" : price<prev ? "#ef4444" : "#64748b";
+
+priceEl.innerHTML=`<span style="color:${color}">₹${price.toFixed(2)} ${arrow}</span>`;
+valueEl.textContent=`₹${total.toFixed(2)}`;
+
+}catch(err){
+
+priceEl.textContent="Error";
+valueEl.textContent="—";
+
+}
+
+})
+
+);
+
+this.updatePortfolioTotal();
+
+}
+
+updatePortfolioTotal(){
+
+let total=0;
+
+this.portfolio.forEach((s,i)=>{
+
+const priceEl = document.getElementById(`price-${i}`);
+if(!priceEl) return;
+
+const price = parseFloat(
+priceEl.textContent.replace(/[₹,▲▼→]/g,"")
+);
+
+if(!isNaN(price)){
+total += price*s.qty;
+}
+
+});
+
+const el = document.getElementById("portfolioTotalValue");
+
+if(el){
+el.textContent = "₹"+total.toLocaleString("en-IN",{maximumFractionDigits:2});
+}
+
+}
+
+
+
+
+
+
+
+/* ---------------- MARKET ---------------- */
+
+updateIndexDisplay(name,prices){
+
+if(!prices.length) return;
+
+const current = prices[prices.length-1];
+const prev = prices[prices.length-2] ?? current;
+
+const diff = current-prev;
+const pct = (diff/prev)*100;
+
+const arrow = diff>0 ? "▲" : diff<0 ? "▼" : "→";
+const color = diff>0 ? "#22c55e" : diff<0 ? "#ef4444" : "#64748b";
+
+const el = document.getElementById(`${name}Value`);
+if(!el) return;
+
+el.innerHTML = `
+<span style="color:${color}">
+${arrow} ${current.toLocaleString("en-IN")} (${pct.toFixed(2)}%)
+</span>
+`;
+
+}
 
 async loadMarketCharts(){
 
 try{
 
-const res=await fetch("/market/indices")
-const data=await res.json()
+const res = await fetch("/market/indices");
+const data = await res.json();
 
-if(data.status!=="success") return
+if(data.status!=="success") return;
 
-const labels=data.nifty.map(d=>d.date)
+const labels = data.nifty.map(d=>d.date);
+const nifty = data.nifty.map(d=>d.close);
+const sensex = data.sensex.map(d=>d.close);
 
-const niftyPrices=data.nifty.map(d=>d.close)
-const sensexPrices=data.sensex.map(d=>d.close)
+this.updateIndexDisplay("nifty",nifty);
+this.updateIndexDisplay("sensex",sensex);
 
-const trend=this.getTrend(niftyPrices)
+const ctx1=document.getElementById("niftyChart")?.getContext("2d");
+const ctx2=document.getElementById("sensexChart")?.getContext("2d");
 
-const color=trend==="up"?"#22c55e":"#ef4444"
+if(!ctx1 || !ctx2) return;
 
-this.applyTheme(trend)
+this.niftyChart?.destroy();
+this.sensexChart?.destroy();
 
-if(this.niftyChart) this.niftyChart.destroy()
-if(this.sensexChart) this.sensexChart.destroy()
-
-const g1=document.getElementById("niftyChart").getContext("2d").createLinearGradient(0,0,0,220)
-const g2=document.getElementById("sensexChart").getContext("2d").createLinearGradient(0,0,0,220)
-
-if(trend==="up"){
-g1.addColorStop(0,"rgba(34,197,94,0.35)")
-g1.addColorStop(1,"rgba(34,197,94,0.02)")
-g2.addColorStop(0,"rgba(34,197,94,0.35)")
-g2.addColorStop(1,"rgba(34,197,94,0.02)")
-}else{
-g1.addColorStop(0,"rgba(239,68,68,0.35)")
-g1.addColorStop(1,"rgba(239,68,68,0.02)")
-g2.addColorStop(0,"rgba(239,68,68,0.35)")
-g2.addColorStop(1,"rgba(239,68,68,0.02)")
-}
-
-this.niftyChart=new Chart(document.getElementById("niftyChart"),{
+this.niftyChart = new Chart(ctx1,{
 type:"line",
-data:{labels,datasets:[{data:niftyPrices,borderColor:color,backgroundColor:g1,fill:true,tension:0.4,pointRadius:0}]},
-options:{responsive:true,plugins:{legend:{display:false}}}
-})
+data:{labels,datasets:[{data:nifty,borderColor:"#22c55e",tension:.4,pointRadius:0}]},
+options:{plugins:{legend:{display:false}}}
+});
 
-this.sensexChart=new Chart(document.getElementById("sensexChart"),{
+this.sensexChart = new Chart(ctx2,{
 type:"line",
-data:{labels,datasets:[{data:sensexPrices,borderColor:color,backgroundColor:g2,fill:true,tension:0.4,pointRadius:0}]},
-options:{responsive:true,plugins:{legend:{display:false}}}
-})
+data:{labels,datasets:[{data:sensex,borderColor:"#ef4444",tension:.4,pointRadius:0}]},
+options:{plugins:{legend:{display:false}}}
+});
 
 }catch(err){
-console.error("Chart error",err)
+console.error(err);
 }
 
 }
+
+
+
+
+
+
+
+/* ---------------- THEME ---------------- */
+
+initTheme(){
+
+const btn=document.getElementById("themeToggle");
+if(!btn) return;
+
+let theme = localStorage.getItem("theme") || "dark";
+
+document.body.classList.add(`theme-${theme}`);
+
+btn.innerHTML = theme==="dark"
+? '<i class="fas fa-sun"></i>'
+: '<i class="fas fa-moon"></i>';
+
+btn.onclick=()=>{
+
+const dark=document.body.classList.contains("theme-dark");
+
+document.body.classList.toggle("theme-dark");
+document.body.classList.toggle("theme-light");
+
+const newTheme = dark ? "light":"dark";
+
+localStorage.setItem("theme",newTheme);
+
+btn.innerHTML=newTheme==="dark"
+? '<i class="fas fa-sun"></i>'
+: '<i class="fas fa-moon"></i>';
+
+};
+
+}
+
+
+
+
+
+
 
 /* ---------------- WELCOME ---------------- */
 
 welcome(){
 
 setTimeout(()=>{
-this.typeAI("🕉️ Namah Shivaya!\n\nI am your AI trading assistant.\nAsk about stocks, trends, or upload your portfolio.")
-},700)
+
+this.typeAI(`🕉️ Namah Shivaya!
+
+I am **Trishul Trader** — your AI trading assistant.
+
+Ask me about:
+
+• Indian stocks (RELIANCE, TCS, HAL)  
+• NIFTY / SENSEX trends  
+• Portfolio analysis  
+• Upload Excel / CSV portfolio
+
+Happy trading! 📈`);
+
+},800);
 
 }
 
 }
 
 document.addEventListener("DOMContentLoaded",()=>{
-new TrishulTrader()
-})
+new TrishulTrader();
+});

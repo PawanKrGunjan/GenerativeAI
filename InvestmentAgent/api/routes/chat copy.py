@@ -8,9 +8,9 @@ import pandas as pd
 from typing import Optional
 
 from api.schemas import ChatResponse
+from agents.investment_agent_AI import agent
 from utils.logger import LOGGER
 from utils.config import DATA_DIR
-from chat.chat_service import run_chat
 
 router = APIRouter(prefix="/chat", tags=["chat"])
 
@@ -21,7 +21,7 @@ ALLOWED_EXTENSIONS = {".csv", ".xlsx", ".xls", ".json"}
 # ─────────────────────────────────────────────
 # Chat UI
 # ─────────────────────────────────────────────
-@router.get("/ui", response_class=HTMLResponse)
+@router.get("/", response_class=HTMLResponse)
 async def chat_ui():
     """Serve interactive chat UI."""
     try:
@@ -40,7 +40,6 @@ async def chat_ui():
 @router.post("/", response_model=ChatResponse)
 async def chat(
     message: str = Form(...),
-    session_id: str = Form(...),
     file: Optional[UploadFile] = File(None)
 ):
     """Chat with optional portfolio upload."""
@@ -50,48 +49,46 @@ async def chat(
     # Ensure data directory exists
     DATA_DIR.mkdir(parents=True, exist_ok=True)
 
-    # ---------------------------------------
-    # Handle portfolio upload
-    # ---------------------------------------
     if file and file.filename:
 
         LOGGER.info("Processing upload: %s", file.filename)
 
         ext = Path(file.filename).suffix.lower()
 
+        # Validate file type
         if ext not in ALLOWED_EXTENSIONS:
             raise HTTPException(
                 status_code=400,
                 detail=f"Unsupported file type: {ext}"
             )
 
+        # Create safe filename
         timestamp = pd.Timestamp.now().strftime("%Y%m%d_%H%M%S")
         safe_name = f"holdings-{Path(file.filename).stem}-{timestamp}{ext}"
 
         portfolio_path = DATA_DIR / safe_name
 
+        # Save uploaded file
         with open(portfolio_path, "wb") as buffer:
             shutil.copyfileobj(file.file, buffer)
 
         LOGGER.info("Portfolio saved: %s", portfolio_path)
 
+        # Enhance agent message
         message = f"{original_message}\n\n📁 Portfolio uploaded: {safe_name}"
 
-    # ---------------------------------------
-    # Run Investment Agent
-    # ---------------------------------------
+    # Run investment agent safely
     try:
 
-        result = await run_chat(
-            session_id=session_id,
-            message=message
-        )
+        result = agent.run(query=message)
 
         answer = result.get("answer", "No response from agent")
+        time_ist = result.get(
+            "current_time_ist",
+            pd.Timestamp.now().strftime("%H:%M:%S")
+        )
 
-        time_ist = pd.Timestamp.now().strftime("%H:%M:%S")
-
-    except Exception:
+    except Exception as e:
 
         LOGGER.exception("Agent execution failed")
 

@@ -3,10 +3,13 @@
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse
+from fastapi.middleware.cors import CORSMiddleware
 from pathlib import Path
-from tools.market_tools import get_market_indices, get_current_stock_price
 
 from api.routes import tools, chat, portfolio
+
+from tools.market_tools import get_market_indices, get_stock_info
+
 
 app = FastAPI(
     title="Stock Investment Agent API",
@@ -14,20 +17,39 @@ app = FastAPI(
     description="Indian Stock Market AI with portfolio upload & analysis"
 )
 
-# Serve frontend
+
+# ─────────────────────────────────────────────
+# CORS (required for web UI / external apps)
+# ─────────────────────────────────────────────
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+
+# ─────────────────────────────────────────────
+# Static Files
+# ─────────────────────────────────────────────
 app.mount("/static", StaticFiles(directory="web"), name="static")
 
-# Register routers
+
+# ─────────────────────────────────────────────
+# Register Routers
+# ─────────────────────────────────────────────
 app.include_router(chat.router)
 app.include_router(tools.router)
 app.include_router(portfolio.router)
+
 
 # ─────────────────────────────────────────────
 # Homepage
 # ─────────────────────────────────────────────
 @app.get("/", response_class=HTMLResponse)
 async def homepage():
-    """Serve the main chat UI."""
+    """Serve main chat UI."""
 
     index_path = Path("web/index.html")
 
@@ -39,18 +61,29 @@ async def homepage():
         status_code=404
     )
 
+
+# ─────────────────────────────────────────────
+# Market APIs
+# ─────────────────────────────────────────────
 @app.get("/market/indices")
 def market_indices():
+    """Return major Indian market indices."""
 
-    data = get_market_indices.invoke({})
+    try:
+        return get_market_indices.invoke({})
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
 
-    return data
 
 @app.get("/market/quote/{symbol}")
 def market_quote(symbol: str):
+    """Return stock quote."""
 
-    data = get_current_stock_price.invoke({"symbol": symbol})
-    return data
+    try:
+        return get_stock_info.invoke({"symbol": symbol})
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
 
 # ─────────────────────────────────────────────
 # Health Check
@@ -70,5 +103,6 @@ if __name__ == "__main__":
         "api.main:app",
         host="127.0.0.1",
         port=8000,
+        log_level='critical',
         reload=True
     )

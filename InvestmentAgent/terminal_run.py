@@ -1,10 +1,10 @@
 """
-run.py
+terminal_run.py
 Main entry point for Investment Agent CLI
 """
 
 from colorama import Fore, Style, init
-
+import asyncio
 from utils.logger import LOGGER
 from utils.db_connect import initialize_database
 from utils.terminal_ui import (
@@ -18,10 +18,14 @@ from utils.terminal_ui import (
     print_user_message,
 )
 
-from agents.investment_agent_AI import agent
+#from agents.investment_agent_AI import agent
+#from agents.investment_agent_base import InvestmentAgentState, gr, IST
+from agents.investment_agent import InvestmentAgentState, gr, IST
+from chat.chat_run import handle_user_message
+
 init(autoreset=True)
 
-
+CURRENT_THREAD_ID = 'SriGanesh'
 # ────────────────────────────────────────────────
 # ENVIRONMENT SETUP
 # ────────────────────────────────────────────────
@@ -35,7 +39,6 @@ def setup_environment():
 # ────────────────────────────────────────────────
 # COMMAND HANDLER
 # ────────────────────────────────────────────────
-
 def handle_command(cmd: str, ui: TerminalChatUI) -> bool:
     """
     Handle system commands.
@@ -65,11 +68,8 @@ def handle_command(cmd: str, ui: TerminalChatUI) -> bool:
 # ────────────────────────────────────────────────
 # MAIN LOOP
 # ────────────────────────────────────────────────
-
 def main():
-
     setup_environment()
-
     print_divider(78, "═", Fore.CYAN)
     print(f"{Fore.CYAN}  Indian Stock Market AI Agent{Style.RESET_ALL}")
     print_divider(78, "═", Fore.CYAN)
@@ -113,15 +113,18 @@ def main():
 
             print_thinking()
 
-            result = agent.run(query=text)
-
+            #result = agent.run(query=text)
+            result = asyncio.run(handle_user_message(
+                thread_id=CURRENT_THREAD_ID,
+                user_query=text
+            ))
         except Exception as e:
 
             LOGGER.exception("Agent execution failed")
 
             print_system_msg(
                 f"Agent error: {str(e)}",
-                "✗",
+                "x",
                 Fore.RED,
             )
 
@@ -137,7 +140,7 @@ def main():
 
             print_system_msg(
                 "No response generated",
-                "⚠",
+                "!",
                 Fore.YELLOW,
             )
 

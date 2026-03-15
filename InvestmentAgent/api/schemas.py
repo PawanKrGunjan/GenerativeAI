@@ -1,10 +1,10 @@
 """
 schemas.py
-Pydantic schemas for FastAPI request/response models
+Pydantic schemas for FastAPI request/response models.
 """
 
-from typing import Any, Dict,List, Optional
-from pydantic import BaseModel, Field
+from typing import Any, Dict, List, Optional
+from pydantic import BaseModel, Field, ConfigDict
 
 
 # ─────────────────────────────────────────────
@@ -12,11 +12,15 @@ from pydantic import BaseModel, Field
 # ─────────────────────────────────────────────
 
 class BaseSchema(BaseModel):
-    """Base model with common configuration."""
+    """
+    Base schema providing common configuration
+    used by all API models.
+    """
 
-    class Config:
-        from_attributes = True
-        extra = "ignore"
+    model_config = ConfigDict(
+        from_attributes=True,
+        extra="ignore"
+    )
 
 
 # ─────────────────────────────────────────────
@@ -24,17 +28,26 @@ class BaseSchema(BaseModel):
 # ─────────────────────────────────────────────
 
 class ChatRequest(BaseSchema):
-    """User chat message sent to AI agent."""
+    """
+    User chat request sent to the AI investment agent.
+    """
 
     message: str = Field(
         ...,
         description="User message to the AI investment agent",
-        example="Analyze Reliance stock"
+        examples=["Analyze Reliance stock"]
+    )
+
+    session_id: Optional[str] = Field(
+        default=None,
+        description="Session identifier for maintaining conversation memory"
     )
 
 
 class ChatResponse(BaseSchema):
-    """AI response returned to the client."""
+    """
+    AI response returned to the client.
+    """
 
     answer: str = Field(
         ...,
@@ -52,12 +65,14 @@ class ChatResponse(BaseSchema):
 # ─────────────────────────────────────────────
 
 class ToolRequest(BaseSchema):
-    """Request to run a tool from the tool registry."""
+    """
+    Request to execute a tool from the tool registry.
+    """
 
     tool_name: str = Field(
         ...,
         description="Name of the tool to execute",
-        example="stock_price"
+        examples=["get_stock_info"]
     )
 
     args: Dict[str, Any] = Field(
@@ -67,12 +82,14 @@ class ToolRequest(BaseSchema):
 
 
 class ToolResponse(BaseSchema):
-    """Tool execution response."""
+    """
+    Response returned after tool execution.
+    """
 
     status: str = Field(
         ...,
         description="Execution status",
-        example="success"
+        examples=["success", "error"]
     )
 
     result: Optional[Dict[str, Any]] = Field(
@@ -87,13 +104,13 @@ class ToolResponse(BaseSchema):
 
 
 # ─────────────────────────────────────────────
-# Agent Response
+# Agent Response (Internal)
 # ─────────────────────────────────────────────
 
 class AgentResult(BaseSchema):
     """
-    Internal agent response structure.
-    Used between the agent and API layer.
+    Internal agent response structure used between
+    the AI agent and API layer.
     """
 
     answer: str = Field(
@@ -108,37 +125,49 @@ class AgentResult(BaseSchema):
 
     memory_summary: Optional[str] = Field(
         default=None,
-        description="Optional memory summary from the agent"
+        description="Optional memory summary returned by the agent"
     )
+
 
 # ─────────────────────────────────────────────
 # Portfolio
 # ─────────────────────────────────────────────
 
-
 class PortfolioStock(BaseSchema):
-    """Single portfolio stock"""
+    """
+    Single stock entry in a portfolio.
+    """
 
     symbol: str = Field(
         ...,
         description="Stock symbol",
-        example="BEL"
+        examples=["BEL"]
     )
 
     qty: float = Field(
         ...,
         description="Quantity held",
-        example=10
+        examples=[10]
     )
 
 
 class PortfolioRequest(BaseSchema):
-    """Portfolio save request"""
+    """
+    Request to save or update a user portfolio.
+    """
 
-    portfolio: List[PortfolioStock]
+    portfolio: List[PortfolioStock] = Field(
+        ...,
+        description="List of portfolio stocks"
+    )
 
 
 class PortfolioResponse(BaseSchema):
-    """Portfolio response"""
+    """
+    Portfolio response returned by the API.
+    """
 
-    portfolio: List[PortfolioStock]
+    portfolio: List[PortfolioStock] = Field(
+        ...,
+        description="Portfolio holdings"
+    )

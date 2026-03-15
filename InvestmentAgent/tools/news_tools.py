@@ -31,12 +31,11 @@ def search_recent_news(query: str) -> Dict[str, Any]:
         results = SEARCH.invoke(query)
 
         return {
-            "status": "success",
-            "results": results
+            query: results
         }
 
     except Exception as e:
 
         LOGGER.exception("search_recent_news failed")
 
-        return {"status": "error", "message": str(e)}
+        return {query: str(e)}

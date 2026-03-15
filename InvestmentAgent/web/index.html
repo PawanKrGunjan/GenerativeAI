@@ -1,163 +1,154 @@
-<!DOCTYPE html>
-<html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Trishul Trader - AI-powered Indian stock market advisor" />
+  <meta name="theme-color" content="#0f172a" />
 
-<title>Trishul Trader | AI Stock Market Advisor</title>
+  <title>Trishul Trader | AI Stock Market Advisor</title>
 
-<link rel="icon" type="image/svg+xml" href="/static/om.svg">
+  <!-- Favicon -->
+  <link rel="icon" type="image/svg+xml" href="/static/om.svg" />
+  <link rel="apple-touch-icon" href="/static/om.svg" />
 
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
 
-<link rel="stylesheet" href="/static/style.css">
+  <!-- Font Awesome -->
+  <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+        crossorigin="anonymous"
+        referrerpolicy="no-referrer" />
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
 
+  <!-- Markdown Rendering -->
+  <script src="https://cdn.jsdelivr.net/npm/marked@4.3.0/marked.min.js"></script>
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="/static/style.css" />
 </head>
 
 <body>
 
-<div class="app">
+  <div class="app">
 
-<header class="topbar glass">
+    <header class="topbar glass">
+      <div class="brand">
+        <img src="/static/om.svg" class="logo" alt="Trishul Trader Logo" loading="lazy" />
+        <div>
+          <h1>Trishul Trader</h1>
+          <span>AI Market Advisor</span>
+        </div>
+      </div>
 
-<div class="brand">
-<img src="/static/om.svg" class="logo">
+      <div class="topbar-right">
+        <div class="status">
+          <span class="status-dot" aria-hidden="true"></span>
+          <span id="statusText">Connected</span>
+        </div>
 
-<div>
-<h1>Trishul Trader</h1>
-<span>AI Market Advisor</span>
-</div>
-</div>
+        <button id="themeToggle" class="theme-btn" aria-label="Toggle dark/light mode">
+          <i class="fas fa-moon"></i>
+        </button>
+      </div>
+    </header>
 
-<div class="topbar-right">
+    <div class="workspace">
 
-<div class="status">
-<span class="status-dot"></span>
-<span id="statusText">Connected</span>
-</div>
+      <!-- Market Overview (Left Panel) -->
+      <aside class="panel glass" aria-labelledby="market-overview">
+        <h2 id="market-overview">📊 Market Overview</h2>
 
-<button id="themeToggle" class="theme-btn">
-<i class="fas fa-moon"></i>
-</button>
+        <div class="trend">
+          <div class="trend-label nifty-label">NIFTY 50</div>
+          <div class="chart-box">
+            <canvas id="niftyChart"></canvas>
+          </div>
+        </div>
 
-</div>
+        <div class="trend">
+          <div class="trend-label sensex-label">SENSEX</div>
+          <div class="chart-box">
+            <canvas id="sensexChart"></canvas>
+          </div>
+        </div>
+      </aside>
 
-</header>
+      <!-- Chat Area (Main Content) -->
+      <main class="chat-panel glass">
+        <div id="chat" class="chat-messages" role="log" aria-live="polite"></div>
+        <div id="typingIndicator" class="typing-indicator"></div>
 
-<div class="workspace">
+        <div class="chat-input">
+          <input
+            id="messageInput"
+            type="text"
+            placeholder="Ask about Reliance, Nifty trend, portfolio analysis..."
+            autocomplete="off"
+            aria-label="Type your message here"
+          />
 
-<!-- LEFT PANEL -->
+          <label for="fileInput" class="upload-btn" aria-label="Upload portfolio file">
+            <i class="fas fa-upload"></i>
+          </label>
+          <input
+            id="fileInput"
+            type="file"
+            hidden
+            accept=".xlsx,.xls,.csv,.json"
+            aria-hidden="true"
+          />
 
-<!-- LEFT PANEL -->
+          <button id="sendButton" aria-label="Send message">
+            <i class="fas fa-paper-plane"></i>
+          </button>
+        </div>
+      </main>
 
-<aside class="panel glass">
+      <!-- Portfolio & Reasoning (Right Panel) -->
+      <aside class="panel glass" aria-labelledby="portfolio-title">
+        <h3 id="portfolio-title">📁 Portfolio</h3>
 
-<h2>📊 Market Overview</h2>
+        <div class="portfolio-input">
+          <input id="symbolInput" type="text" placeholder="Symbol (e.g. RELIANCE)" aria-label="Stock symbol" maxlength="20" />
+          <input id="qtyInput" type="number" min="1" step="1" placeholder="Qty" aria-label="Quantity" />
+          <button id="addStockBtn">Add</button>
+        </div>
 
-<div class="trend">
+        <div class="portfolio-table-wrapper">
+          <table id="portfolioTable" aria-describedby="portfolio-desc">
+            <thead>
+              <tr>
+                <th>Symbol</th>
+                <th>Qty</th>
+                <th>Price</th>
+                <th>Total</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
 
-<div class="trend-label nifty-label">
-NIFTY 50
-</div>
+          <div class="portfolio-total">
+            <strong>Total Value:</strong>
+            <span id="portfolioTotalValue">₹0.00</span>
+          </div>
+        </div>
 
-<div class="chart-box">
-<canvas id="niftyChart"></canvas>
-</div>
+        <h3>🧠 Agent Reasoning</h3>
+        <div id="agentThoughts" class="reasoning">
+          Waiting for analysis...
+        </div>
+      </aside>
 
-</div>
+    </div>
+  </div>
 
-<div class="trend">
-
-<div class="trend-label sensex-label">
-SENSEX
-</div>
-
-<div class="chart-box">
-<canvas id="sensexChart"></canvas>
-</div>
-
-</div>
-
-</aside>
-<!-- CHAT PANEL -->
-
-<main class="chat-panel glass">
-
-<div id="chat" class="chat-messages"></div>
-
-<div class="chat-input">
-
-<input
-id="messageInput"
-type="text"
-placeholder="Ask about Reliance, Nifty trend, or upload portfolio..."
-autocomplete="off"
-/>
-
-<label for="fileInput" class="upload-btn">
-<i class="fa fa-upload"></i>
-</label>
-
-<input id="fileInput" type="file" hidden accept=".xlsx,.xls,.csv,.json">
-
-<button id="sendButton">
-<i class="fa fa-paper-plane"></i>
-</button>
-
-</div>
-
-</main>
-
-<!-- RIGHT PANEL -->
-
-<aside class="panel glass">
-
-<h3>📁 Portfolio</h3>
-
-<div class="portfolio-input">
-
-<input id="symbolInput" placeholder="Stock Symbol (e.g. RELIANCE)">
-<input id="qtyInput" type="number" placeholder="Qty">
-
-<button id="addStockBtn">
-Add
-</button>
-
-</div>
-
-<table id="portfolioTable">
-
-<thead>
-<tr>
-<th>Symbol</th>
-<th>Qty</th>
-<th>Price</th>
-<th>Total</th>
-</tr>
-</thead>
-
-<tbody></tbody>
-
-</table>
-
-<h3>🧠 Agent Reasoning</h3>
-
-<div id="agentThoughts" class="reasoning">
-Waiting for analysis...
-</div>
-
-</aside>
-
-</div>
-
-</div>
-
-<script src="/static/script.js"></script>
+  <!-- Your main JavaScript -->
+  <script src="/static/script.js"></script>
 
 </body>
 </html>
