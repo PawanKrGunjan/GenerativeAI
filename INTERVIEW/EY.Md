@@ -599,3 +599,354 @@ async def bad_example():
 - FastAPI makes both work well, but choosing wrong can hurt performance under load.
 
 ***
+
+
+# EY Managerial Round Interview Asked Questions
+ 
+**Python, Advanced Concepts & Agentic AI**  
+
+**Prepared for:** EY (Ernst & Young) Managerial Round  
+**Date:** March 2026  
+
+---
+
+## Table of Contents
+1. [How does Python manage memory?](#1-how-does-python-manage-memory)  
+2. [What are the challenges or limitations you face in Python?](#2-what-are-the-challenges-or-limitations-you-face-in-python)  
+3. [Explain Decorators in Python](#3-explain-decorators-in-python)  
+4. [How will you handle division by zero (n/0) in a Python function?](#4-how-will-you-handle-division-by-zero-n0-in-a-python-function)  
+5. [How will you handle network error exceptions with exponential backoff and final response?](#5-how-will-you-handle-network-error-exceptions-with-exponential-backoff-and-final-response)  
+6. [Explain the role of `yield` in Python](#6-explain-the-role-of-yield-in-python)  
+7. [How will you serialize a Python class?](#7-how-will-you-serialize-a-python-class)  
+8. [Explain `async` / `await` and its usage in Python](#8-explain-async--await-and-its-usage-in-python)  
+9. [Explain the Agentic AI Pipeline](#9-explain-the-agentic-ai-pipeline)  
+10. [How are parallel nodes executed in LangGraph? (with code)](#10-how-are-parallel-nodes-executed-in-langgraph-provide-code)  
+
+---
+
+### 1. How does Python manage memory?
+
+Python (CPython implementation) uses a combination of **reference counting** and **generational garbage collection**:
+
+- **Private Heap**: All Python objects and data structures live in a private heap managed by the Python Memory Manager.
+- **Reference Counting** (Primary mechanism): Every object has a reference count. When it reaches zero, the memory is immediately deallocated.
+- **Garbage Collector (GC)**: Handles cyclic references (objects referencing each other). It uses a **generational GC** with 3 generations:
+  - Generation 0: Newly created objects (most frequent collection).
+  - Generation 1 & 2: Older objects.
+- **PyMalloc**: Special allocator for small objects (< 512 bytes) for speed and reduced fragmentation.
+- You can control GC manually via the `gc` module (`gc.collect()`, `gc.disable()`, thresholds).
+
+**Key Point for Interview**:  
+> "Python does **not** require manual memory management like C/C++. The combination of reference counting + generational GC makes it automatic and safe, but it introduces slight overhead and the GIL."
+
+```python
+import gc
+import sys
+
+x = [1, 2, 3]
+print(sys.getrefcount(x))   # 2 (one from variable, one from getrefcount)
+del x
+gc.collect()                # Force collection
+```
+
+---
+
+### 2. What are the challenges or limitations you face in Python?
+
+| Challenge                  | Impact                                      | Mitigation / Best Practice                     |
+|---------------------------|---------------------------------------------|------------------------------------------------|
+| **Global Interpreter Lock (GIL)** | True CPU parallelism impossible in threads | Use `multiprocessing`, `concurrent.futures`, or C extensions |
+| **Performance**           | Slower than C++/Java for CPU-bound tasks   | Use Numba, Cython, PyPy, or Rust extensions   |
+| **Dynamic Typing**        | Runtime errors instead of compile-time     | Type hints + `mypy` / `pyright`                |
+| **Memory Overhead**       | Higher memory usage due to object model    | Use `__slots__`, `array`, `numpy`, generators |
+| **Package & Version Management** | Dependency conflicts common              | Use `uv`, `poetry`, or `pipx` + virtualenvs  |
+| **Mobile / Embedded**     | Not ideal for resource-constrained envs    | Use MicroPython or cross-compile               |
+
+**Managerial Insight**:  
+> "I always design solutions considering these limitations — for example, choosing `asyncio` for I/O-bound services and `multiprocessing` or Ray for CPU-heavy workloads."
+
+---
+
+### 3. Explain Decorators in Python
+
+Decorators are **higher-order functions** that modify or extend the behavior of another function/class **without changing its source code**.
+
+- Syntax sugar: `@decorator` ≡ `func = decorator(func)`
+- Can be simple or take arguments (decorator factory).
+- Common use cases: logging, timing, authentication, caching, retry logic.
+
+**Example** (timing decorator):
+
+```python
+import time
+from functools import wraps
+
+def timer(func):
+    @wraps(func)                    # Preserves original metadata
+    def wrapper(*args, **kwargs):
+        start = time.perf_counter()
+        result = func(*args, **kwargs)
+        end = time.perf_counter()
+        print(f"{func.__name__} took {end-start:.4f} seconds")
+        return result
+    return wrapper
+
+@timer
+def heavy_calculation(n):
+    return sum(i**2 for i in range(n))
+
+heavy_calculation(10_000_000)
+```
+
+**Advanced**: Class decorators, decorator with arguments, stacked decorators, `functools.lru_cache`, etc.
+
+---
+
+### 4. How will you handle division by zero (n/0) in a Python function?
+
+**Best Practice** (explicit + graceful):
+
+```python
+def safe_divide(a: float, b: float) -> float | str:
+    try:
+        return a / b
+    except ZeroDivisionError:
+        return "Error: Division by zero is not allowed"
+    except Exception as e:          # Catch any unexpected error
+        return f"Unexpected error: {str(e)}"
+```
+
+Alternative (defensive programming):
+```python
+def safe_divide(a: float, b: float) -> float | None:
+    if b == 0:
+        return None                  # or raise custom exception
+    return a / b
+```
+
+**Interview Tip**: Mention both approaches and when to use each (try-except for exceptions you cannot predict, explicit check for performance-critical code).
+
+---
+
+### 5. How will you handle network error exceptions with exponential backoff and final response?
+
+**Recommended**: Use `tenacity` (industry standard) + `requests`.
+
+```python
+from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
+import requests
+from requests.exceptions import RequestException, Timeout
+
+@retry(
+    stop=stop_after_attempt(6),                    # 6 total attempts
+    wait=wait_exponential(multiplier=1, min=2, max=30),  # 2s → 4s → 8s → 16s → 30s
+    retry=retry_if_exception_type((RequestException, Timeout)),
+    before_sleep=lambda retry_state: print(f"Attempt {retry_state.attempt_number} failed. Retrying in {retry_state.next_action.sleep} seconds..."),
+)
+def fetch_with_retry(url: str):
+    return requests.get(url, timeout=10)
+
+# Usage with final response
+def get_data(url: str):
+    try:
+        response = fetch_with_retry(url)
+        response.raise_for_status()
+        return response.json()
+    except Exception as e:                          # After all retries exhausted
+        return f"FINAL RESPONSE: Network operation failed after retries. Error: {str(e)}"
+```
+
+**Manual implementation** (if no external libs allowed):
+Use `time.sleep(2 ** attempt + random jitter)` in a loop.
+
+---
+
+### 6. Explain the role of `yield` in Python
+
+`yield` turns a function into a **generator**. It:
+- Pauses execution and **returns** a value to the caller.
+- Saves the entire local state (variables, position).
+- Allows **lazy evaluation** → memory efficient.
+
+**Key Benefits**:
+- Process infinite/large streams without loading everything in memory.
+- Used in pipelines, data streaming, async generators (`async def` + `yield`).
+
+**Example**:
+```python
+def fibonacci(n):
+    a, b = 0, 1
+    for _ in range(n):
+        yield a
+        a, b = b, a + b
+
+for num in fibonacci(10):
+    print(num)          # Generates on-the-fly
+```
+
+`yield from` delegates to another generator.
+
+---
+
+### 7. How will you serialize a Python class?
+
+**Best options** (ranked by use case):
+
+1. **Pickle** (binary, full fidelity):
+   ```python
+   import pickle
+   serialized = pickle.dumps(my_instance)
+   restored = pickle.loads(serialized)
+   ```
+   → Use `__getstate__` / `__setstate__` for custom control.  
+   **Warning**: Not safe for untrusted data.
+
+2. **JSON** (human-readable, web-friendly):
+   ```python
+   from dataclasses import asdict, dataclass
+   import json
+
+   @dataclass
+   class User:
+       name: str
+       age: int
+
+   user = User("Pawan", 30)
+   json_str = json.dumps(asdict(user))
+   ```
+
+3. **Pydantic** (modern standard):
+   ```python
+   from pydantic import BaseModel
+   class User(BaseModel):
+       name: str
+       age: int
+   print(user.model_dump_json())
+   ```
+
+**Managerial Answer**: "For production I prefer Pydantic v2 because it gives validation + serialization out of the box."
+
+---
+
+### 8. Explain `async` / `await` and its usage in Python
+
+`async` / `await` is Python’s native **asynchronous programming** model (introduced in 3.5).
+
+- `async def` → defines a **coroutine**.
+- `await` → pauses the coroutine until the awaited task completes (non-blocking).
+- Runs on a single-threaded **event loop** (`asyncio`).
+
+**Best for**: I/O-bound tasks (HTTP calls, DB queries, file I/O).
+
+**Example** (concurrent API calls):
+```python
+import asyncio
+import aiohttp
+
+async def fetch(url):
+    async with aiohttp.ClientSession() as session:
+        async with session.get(url) as resp:
+            return await resp.text()
+
+async def main():
+    urls = ["https://api1.com", "https://api2.com"]
+    results = await asyncio.gather(*[fetch(u) for u in urls])  # Parallel!
+    return results
+
+result = asyncio.run(main())
+```
+
+**Key Points**:
+- `asyncio.gather()` / `TaskGroup` (Python 3.11+) for parallelism.
+- Use `asyncio.to_thread()` for CPU-bound work.
+- Perfect for microservices, web scraping, real-time apps.
+
+---
+
+### 9. Explain the Agentic AI Pipeline
+
+**Agentic AI** = AI systems that act **autonomously** like human agents (plan → act → observe → iterate).
+
+**Core Pipeline** (standard in LangGraph / CrewAI / AutoGen):
+
+1. **Input** → User query / goal.
+2. **Planner / Reasoner** → LLM breaks task into steps (ReAct, Plan-and-Execute, etc.).
+3. **Tool Calling** → Agent selects and calls tools (search, code interpreter, DB, APIs).
+4. **Observation** → Tool result is fed back to LLM.
+5. **Reflection / Self-Critique** → LLM evaluates if goal is met.
+6. **Loop** → Continues until success or max iterations.
+7. **Final Output** → Structured response + explanation.
+
+**LangGraph Advantage**: State is explicitly managed in a **graph** (nodes = agents/tools, edges = control flow). This makes the pipeline **stateful, traceable, and production-ready**.
+
+**Managerial Insight**:  
+> "Agentic pipelines move us from simple Q&A to reliable, goal-oriented AI systems — exactly what enterprises like EY need for automation."
+
+---
+
+### 10. How are parallel nodes executed in LangGraph? (Provide Code)
+
+**LangGraph** (built on LangChain) executes **parallel nodes automatically** using a **Pregel** execution engine.
+
+- When a node has **multiple outgoing edges** to independent nodes → those nodes run **concurrently** (thread pool by default).
+- The graph **waits** for all parallel branches to complete before moving forward (fan-in).
+
+**Complete Working Example**:
+
+```python
+from typing import TypedDict, Annotated
+from langgraph.graph import StateGraph, START, END
+from langgraph.graph.message import add_messages
+import operator
+
+class State(TypedDict):
+    messages: Annotated[list, add_messages]   # Merges messages automatically
+
+# Nodes
+def node_a(state: State):
+    print("Node A executed")
+    return {"messages": ["Processed by A"]}
+
+def node_b(state: State):          # Runs parallel with C
+    print("Node B executed")
+    return {"messages": ["Processed by B"]}
+
+def node_c(state: State):          # Runs parallel with B
+    print("Node C executed")
+    return {"messages": ["Processed by C"]}
+
+def join_node(state: State):
+    print("Join node executed after parallel B & C")
+    return {"messages": ["All parallel nodes completed"]}
+
+# Build Graph
+graph = StateGraph(State)
+
+graph.add_node("A", node_a)
+graph.add_node("B", node_b)
+graph.add_node("C", node_c)
+graph.add_node("Join", join_node)
+
+graph.add_edge(START, "A")
+graph.add_edge("A", "B")      # ← Fan-out starts here
+graph.add_edge("A", "C")      # B and C run IN PARALLEL
+graph.add_edge("B", "Join")
+graph.add_edge("C", "Join")
+graph.add_edge("Join", END)
+
+app = graph.compile()
+
+# Run
+result = app.invoke({"messages": ["Start"]})
+print(result)
+```
+
+**Output Order**:
+```
+Node A executed
+Node B executed
+Node C executed     # (order of B/C not guaranteed — truly parallel)
+Join node executed after parallel B & C
+```
+
+**Advanced**: Use `Send` API for **dynamic** parallel execution.
