@@ -9,7 +9,7 @@ tool_map = {t.name: t for t in TOOLS}
 
 
 @router.get("/")
-def list_tools():
+async def list_tools():
 
     return {
         "tools": list(tool_map.keys())
@@ -17,7 +17,7 @@ def list_tools():
 
 
 @router.post("/run")
-def run_tool(req: ToolRequest):
+async def run_tool(req: ToolRequest):
 
     if req.tool_name not in tool_map:
         return {"error": "Tool not found"}

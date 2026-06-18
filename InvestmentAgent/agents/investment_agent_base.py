@@ -28,7 +28,7 @@ from tools.tool_registry import TOOLS
 from utils.logger import LOGGER
 from utils.config import GRAPH_DIR
 from utils.db_connect import get_connection
-from memory.store_memory import update_reflection
+from agents.store_memory import update_reflection
 
 
 IST = ZoneInfo("Asia/Kolkata")

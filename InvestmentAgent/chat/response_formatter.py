@@ -2,30 +2,45 @@
 response_formatter.py
 
 Formats the final user-facing response using InvestmentAgentState.
-The LLM only produces reasoning (Signal, Confidence, Points).
-All stock metadata is injected here from the agent state.
+The agent returns structured output in state.result.
 """
 
 from agents.investment_agent import InvestmentAgentState
 
 
-def _clean_reasoning(text: str) -> str:
+def _clean_reasoning(text) -> str:
     """
-    Remove the header and separators the LLM may produce.
-    Keeps only Signal, Confidence, and Pointwise Reasoning.
+    Normalize reasoning text.
+    Supports both string and dict inputs.
     """
 
     if not text:
         return ""
 
+    # Structured agent output
+    if isinstance(text, dict):
+        reasoning = text.get("reasoning", [])
+
+        if isinstance(reasoning, list):
+            text = "\n".join(f"• {item}" for item in reasoning)
+        else:
+            text = str(reasoning)
+
+    text = str(text)
+
     lines = text.strip().splitlines()
 
     cleaned = []
+
     for line in lines:
-        if line.strip().startswith("Stock-Specific Advice"):
+        stripped = line.strip()
+
+        if stripped.startswith("Stock-Specific Advice"):
             continue
-        if set(line.strip()) == {"─"}:
+
+        if stripped and set(stripped) == {"─"}:
             continue
+
         cleaned.append(line)
 
     return "\n".join(cleaned).strip()
@@ -33,72 +48,96 @@ def _clean_reasoning(text: str) -> str:
 
 def format_final_response(state: InvestmentAgentState) -> str:
     """
-    Construct the final response shown to the user.
-
-    Data Sources
-    ------------
-    Company name   → state.company_name
-    Symbol         → state.symbols
-    Prices         → state.prices
-    News           → state.news
-    Time           → state.current_datetime
-    Reasoning      → state.result
+    Construct final user response.
     """
-    with open("agent_state.json", "w") as f:
-        f.write(state.model_dump_json(indent=2))
 
+    # Debug dump
+    try:
+        with open("agent_state.json", "w") as f:
+            f.write(state.model_dump_json(indent=2))
+    except Exception:
+        pass
 
     # --------------------------------------------------
-    # Symbol + Company
+    # Defaults
     # --------------------------------------------------
 
-    company = state.company_name or "Unknown Company"
-
+    company = "Unknown Company"
     symbol = "N/A"
-    if state.symbols:
-        symbol = state.symbols[0].get("symbol", "N/A")
-
-    # --------------------------------------------------
-    # Price data
-    # --------------------------------------------------
-
     price = "N/A"
     low_52 = "N/A"
     high_52 = "N/A"
-    
-    if symbol in state.prices:
+    signal = "UNKNOWN"
+    confidence = 0
+
+    # --------------------------------------------------
+    # Structured result
+    # --------------------------------------------------
+
+    result = state.result or {}
+
+    if isinstance(result, dict):
+
+        company = result.get("company", company)
+
+        symbol = result.get("ticker", symbol)
+
+        price = result.get("price", price)
+
+        signal = result.get("signal", signal)
+
+        confidence = result.get("confidence", confidence)
+
+        reasoning = _clean_reasoning(result)
+
+    else:
+        reasoning = _clean_reasoning(result)
+
+    # --------------------------------------------------
+    # Price enrichment from state.prices
+    # --------------------------------------------------
+
+    if (
+        symbol != "N/A"
+        and isinstance(state.prices, dict)
+        and symbol in state.prices
+    ):
         p = state.prices[symbol]
 
-        price = p.get("price", "N/A")
-        low_52 = p.get("52w_low", "N/A")
-        high_52 = p.get("52w_high", "N/A")
+        if isinstance(p, dict):
+            low_52 = p.get("52w_low", low_52)
+            high_52 = p.get("52w_high", high_52)
+
+            if price == "N/A":
+                price = p.get("price", price)
 
     # --------------------------------------------------
     # Time
     # --------------------------------------------------
 
-    time_str = state.current_datetime.strftime("%Y-%m-%d %H:%M IST")
+    try:
+        time_str = state.current_datetime.strftime(
+            "%Y-%m-%d %H:%M IST"
+        )
+    except Exception:
+        time_str = "N/A"
 
     # --------------------------------------------------
-    # LLM reasoning (cleaned)
-    # --------------------------------------------------
-
-    reasoning = _clean_reasoning(state.result or "Analysis complete.")
-
-    # --------------------------------------------------
-    # News extraction
+    # News
     # --------------------------------------------------
 
     news_lines = []
 
-    for items in state.news.values():
+    if isinstance(state.news, dict):
 
-        if isinstance(items, list):
-            for n in items[:3]:
-                news_lines.append(f"• {n}")
+        for items in state.news.values():
 
-        elif isinstance(items, str):
-            news_lines.append(f"• {items}")
+            if isinstance(items, list):
+                for item in items[:3]:
+                    news_lines.append(f"• {item}")
+
+            elif isinstance(items, str):
+                news_lines.append(f"• {items}")
 
     if not news_lines:
         news_lines.append("No major recent news.")
@@ -106,12 +145,26 @@ def format_final_response(state: InvestmentAgentState) -> str:
     news_section = "\n".join(news_lines)
 
     # --------------------------------------------------
-    # Final formatted response
+    # Final response
     # --------------------------------------------------
 
     return f"""
 Stock-Specific Advice
 ─────────────────────
+
+Company      : {company}
+Symbol       : {symbol}
+Price        : {price}
+52W Low      : {low_52}
+52W High     : {high_52}
+
+Signal       : {signal}
+Confidence   : {confidence}%
+
+Analysis Time: {time_str}
+
+Reasoning
+─────────
 {reasoning}
 
 Recent News

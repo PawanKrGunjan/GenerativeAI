@@ -94,11 +94,11 @@ async def chat(
     except Exception:
 
         LOGGER.exception("Agent execution failed")
+        raise
+        # answer = "⚠️ AI agent failed to process the request."
+        # time_ist = pd.Timestamp.now().strftime("%H:%M:%S")
 
-        answer = "⚠️ AI agent failed to process the request."
-        time_ist = pd.Timestamp.now().strftime("%H:%M:%S")
 
     return ChatResponse(
         answer=answer,
-        time=time_ist
-    )
+        time=time_ist)

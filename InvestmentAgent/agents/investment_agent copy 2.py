@@ -55,7 +55,7 @@ LLM_CHAIN = REACT_PROMPT | LLM_WITH_TOOLS
 # =============================================================
 # Nodes
 # =============================================================
-async def reasoning_node(state: InvestmentAgentState):
+def reasoning_node(state: InvestmentAgentState):
     LOGGER.info(f"NODE → REACT (attempt {state.attempt_count + 1})")
 
     state.current_datetime = datetime.now(IST)
@@ -66,9 +66,7 @@ async def reasoning_node(state: InvestmentAgentState):
 
     response = LLM_CHAIN.invoke(input_dict)
 
-    LOGGER.info(
-        f"LLM RESPONSE → {str(response.content)[:200]}..."
-        )
+    LOGGER.info(f"LLM RESPONSE → {response.content[:200]}...")
 
     updates = {
         "attempt_count": new_attempt,
@@ -136,14 +134,14 @@ async def reasoning_node(state: InvestmentAgentState):
             "attempt_count": new_attempt,
             "messages": (state.messages + [response])[-MAX_MSG_HISTORY:],
             "result": parsed,   # structured output
-            "memory": ((state.memory or []) + [memory_entry])[-MAX_MEMORY:],
+            "memory": (state.memory + [memory_entry])[-MAX_MEMORY:],
         }
 
     # fallback loop
     updates["messages"] = updates["messages"][-MAX_MSG_HISTORY:]
     return updates
 
-async def execute_tool_calls(state: InvestmentAgentState):
+def execute_tool_calls(state: InvestmentAgentState):
     last_msg = state.messages[-1]
     tool_calls = getattr(last_msg, "tool_calls", []) or []
 
@@ -152,8 +150,8 @@ async def execute_tool_calls(state: InvestmentAgentState):
     new_messages = []
     new_symbols = dict(state.symbols)
     new_prices = dict(state.prices)
-    company_name = list(state.company_name or [])
-    tool_history = list(state.tool_history or [])
+    company_name = list(state.company_name)
+    tool_history = list(state.tool_history)
 
     step = len(tool_history) + 1
 
@@ -220,7 +218,7 @@ async def execute_tool_calls(state: InvestmentAgentState):
         "tool_history": tool_history,
     }
 
-async def reflection_node(state: InvestmentAgentState):
+def reflection_node(state: InvestmentAgentState):
     if not state.result or not state.symbols:
         return {}
 
@@ -303,12 +301,12 @@ return {{
             mem["key_facts"]["true_confidence"] = confidence
 
             mem.setdefault("notes", []).append({
-                "timestamp": datetime.now(IST).isoformat(),
+                "timestamp": datetime.utcnow().isoformat(),
                 "note": parsed.get("notes", "")
             })
 
             mem.setdefault("reflections", []).append({
-                "timestamp": datetime.now(IST).isoformat(),
+                "timestamp": datetime.utcnow().isoformat(),
                 "quality": quality,
                 "confidence": confidence,
                 "data": parsed
@@ -328,7 +326,7 @@ return {{
 # =============================================================
 # Router
 # =============================================================
-async def router(state: InvestmentAgentState):
+def router(state: InvestmentAgentState):
     if not state.messages:
         return "REACT"
 
@@ -350,7 +348,7 @@ async def router(state: InvestmentAgentState):
 # =============================================================
 # Build Graph
 # =============================================================
-async def build_graph():
+def build_graph():
     workflow = StateGraph(InvestmentAgentState)
 
     workflow.add_node("REACT", reasoning_node)
@@ -394,31 +392,20 @@ async def build_graph():
     return graph
 
 
-#gr = build_graph()
-#gr = asyncio.run(build_graph())
+gr = build_graph()
 
 if __name__ == "__main__":
-    import asyncio
-
-    graph = asyncio.run(build_graph())
-
+    graph = build_graph()
     print("💬 Investment Advisor Ready! (Type 'exit' to quit)\n")
 
     while True:
         query = input("You: ").strip()
-
-        if query.lower() in ("exit", "quit"):
+        if query.lower() in ["exit", "quit"]:
             break
-
         if not query:
             continue
 
-        result = asyncio.run(
-            graph.ainvoke(
-                {"messages": [HumanMessage(content=query)]}
-            )
-        )
-
+        result = graph.invoke({"messages": [HumanMessage(content=query)]})
         print("\nAdvisor:")
         print(result.get("result") or "No final advice yet.")
         print("-" * 60)

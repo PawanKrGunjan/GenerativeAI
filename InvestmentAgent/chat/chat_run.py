@@ -17,7 +17,7 @@ from datetime import datetime
 from typing import Dict
 
 from langchain_core.messages import HumanMessage
-from agents.investment_agent import InvestmentAgentState, gr, IST
+from agents.investment_agent import InvestmentAgentState, build_graph, IST
 from chat.response_formatter import format_final_response
 from tools.tool_registry import search_recent_news
 
@@ -27,6 +27,7 @@ LOGGER = logging.getLogger("chat_run")
 # Conversation state per thread/session
 state_by_thread: dict[str, InvestmentAgentState] = {}
 
+gr = asyncio.run(build_graph())
 
 # ---------------------------------------------------------
 # NEWS PREFETCH

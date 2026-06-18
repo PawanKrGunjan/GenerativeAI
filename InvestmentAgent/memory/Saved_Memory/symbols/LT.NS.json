@@ -1,0 +1,38 @@
+{
+  "symbol": "LT.NS",
+  "company_name": "Unknown Company",
+  "created_at": "2026-03-25T22:05:02.898117",
+  "last_updated": "2026-03-25T22:14:02.778012",
+  "reflections": [
+    {
+      "timestamp": "2026-03-25T22:14:02.777947",
+      "quality": "average",
+      "confidence": 60,
+      "data": {
+        "quality": "average",
+        "true_confidence": 60,
+        "bias": "bullish",
+        "risks": [
+          "market volatility",
+          "company specific risks"
+        ],
+        "improvements": [
+          "conduct thorough company analysis",
+          "re-evaluate risk assessment"
+        ],
+        "notes": "Company has shown strong growth in recent years, but market conditions may pose a challenge"
+      }
+    }
+  ],
+  "key_facts": {
+    "bias": "bullish",
+    "true_confidence": 60
+  },
+  "last_signals": {},
+  "notes": [
+    {
+      "timestamp": "2026-03-25T22:14:02.777891",
+      "note": "Company has shown strong growth in recent years, but market conditions may pose a challenge"
+    }
+  ]
+}

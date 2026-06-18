@@ -1,0 +1,23 @@
+{
+  "symbol": "BHARTIARTL.NS",
+  "company_name": "Unknown Company",
+  "created_at": "2026-03-25T20:15:26.938302",
+  "last_updated": "2026-03-25T20:15:46.830100",
+  "reflections": [
+    {
+      "timestamp": "2026-03-25T20:15:46.829935",
+      "reflection": "Quality: strong\nTrue Confidence: 80\nBias: sideways\n\nRisks:\n['Dependence on stake transfer and spectrum sale outcomes', 'Debt increase from IPO exploration', \"Uncertainty around Airtel's growth prospects\"]\n\nImprovements:\n['Consider more recent news and updates before making a decision', 'Weigh the potential benefits of active capital management against the risks', \"Monitor Deutsche Bank's stance on Bharti Airtel closely for any future changes\"]"
+    }
+  ],
+  "key_facts": {
+    "bias": "sideways",
+    "true_confidence": 80
+  },
+  "last_signals": {},
+  "notes": [
+    {
+      "timestamp": "2026-03-25T20:15:46.829438",
+      "note": "Stake transfer and spectrum sale could provide a boost, but debt increase is a concern. Further analysis needed to confirm long-term prospects."
+    }
+  ]
+}

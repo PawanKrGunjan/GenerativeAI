@@ -26,7 +26,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from utils.symbol_resolver import resolve_symbols
 from utils.logger import LOGGER
-from memory.store_memory import (
+from agents.store_memory import (
     load_symbol_memory,
     update_reflection,
     add_key_fact

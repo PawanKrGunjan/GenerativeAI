@@ -20,7 +20,7 @@ PORTFOLIO_FILE = DATA_DIR / "portfolio.json"
 # ─────────────────────────────────────────────
 
 @router.get("/", response_model=PortfolioResponse)
-def load_portfolio():
+async def load_portfolio():
 
     if not PORTFOLIO_FILE.exists():
         return {"portfolio": []}
@@ -40,7 +40,7 @@ def load_portfolio():
 # ─────────────────────────────────────────────
 
 @router.post("/save")
-def save_portfolio(payload: PortfolioRequest):
+async def save_portfolio(payload: PortfolioRequest):
 
     DATA_DIR.mkdir(parents=True, exist_ok=True)
 
