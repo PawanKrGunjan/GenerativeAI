@@ -301,7 +301,7 @@ Confidence: 68/100
 ## 3️⃣ Run application
 
 ```
-python run.py
+python terminal_run.py
 ```
 
 ---
@@ -347,21 +347,6 @@ pytest tests/
 
 ---
 
-# 🐳 Docker Support
-
-A Docker environment can be built using:
-
-```
-docker build -t investment-agent .
-```
-
-Run container:
-
-```
-docker run investment-agent
-```
-
----
 
 # 📈 Future Improvements
 
