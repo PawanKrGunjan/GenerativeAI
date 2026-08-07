@@ -4,7 +4,7 @@ from fastapi import APIRouter, HTTPException
 
 from api.schemas import AgentRunRequest, AgentRunResponse, MCPToolInfo, ToolRequest, ToolResponse
 from agents.investment_agent_mcp import run_mcp_agent
-from tools.tool_registry import ToolRegister
+from tools.tool_registry import TOOLS, AGENT_TOOL_MAP
 
 router = APIRouter(prefix="/mcp", tags=["mcp"])
 
@@ -13,9 +13,10 @@ router = APIRouter(prefix="/mcp", tags=["mcp"])
 async def list_mcp_tools() -> Dict[str, Any]:
     """Return available MCP tools and their categories."""
 
+    tool_map = {t.name: t for t in TOOLS}
     tool_list: List[Dict[str, Any]] = []
 
-    for category, tools in ToolRegister.categories.items():
+    for category, tools in AGENT_TOOL_MAP.items():
         for tool in tools:
             tool_list.append(
                 {
@@ -35,7 +36,8 @@ async def list_mcp_tools() -> Dict[str, Any]:
 async def execute_tool(req: ToolRequest):
     """Execute a registered tool from the investment agent tool registry."""
 
-    tool = ToolRegister.get_tool(req.tool_name)
+    tool_map = {t.name: t for t in TOOLS}
+    tool = tool_map.get(req.tool_name)
     if tool is None:
         raise HTTPException(status_code=404, detail="Tool not found")
 

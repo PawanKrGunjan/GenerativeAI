@@ -27,7 +27,6 @@ from agents.helper import (
     extract_python_dict,
 )
 from chat.response_formatter import format_final_response
-from tools.tool_registry import TOOLS
 from utils.logger import LOGGER
 from utils.config import GRAPH_DIR
 from utils.db_connect import get_connection
@@ -36,23 +35,29 @@ from agents.store_memory import load_symbol_memory, save_symbol_memory
 IST = ZoneInfo("Asia/Kolkata")
 MCP_SERVER_URL = os.getenv("MCP_SERVER_URL", "http://127.0.0.1:8000")
 MCP_EXECUTE_URL = f"{MCP_SERVER_URL}/mcp/execute"
+MCP_TOOL_NAMES = os.getenv(
+    "MCP_TOOL_NAMES",
+    "lookup_stock_symbol,get_index_symbol,get_stock_info,get_price_history,get_nifty50_market_sentiment,get_sector_performance,compute_technical_indicators,get_top_movers,compare_stock_returns,predict_stock_trend,market_breadth,get_user_portfolio,search_recent_news",
+).split(",")
 
 
 class MCPToolWrapper:
-    """Wrap a local tool definition and execute it via the MCP endpoint."""
+    """Wrap a tool name and execute it via the MCP endpoint."""
 
     def __init__(self, tool: Any):
-        self._tool = tool
-        self.name = tool.name
-        self.description = getattr(tool, "description", "") or ""
-        self.args_schema = getattr(tool, "args_schema", None)
-        self.return_direct = getattr(tool, "return_direct", False)
+        self._tool = tool if not isinstance(tool, str) else None
+        self.name = tool if isinstance(tool, str) else getattr(tool, "name")
+        self.description = getattr(tool, "description", "") if not isinstance(tool, str) else ""
+        self.args_schema = getattr(tool, "args_schema", None) if not isinstance(tool, str) else None
+        self.return_direct = getattr(tool, "return_direct", False) if not isinstance(tool, str) else False
 
     def invoke(self, args: Dict[str, Any]) -> Any:
         return execute_mcp_tool(self.name, args)
 
     def __getattr__(self, item: str) -> Any:
-        return getattr(self._tool, item)
+        if self._tool is not None:
+            return getattr(self._tool, item)
+        raise AttributeError(item)
 
     def __call__(self, *args, **kwargs) -> Any:
         """Allow the wrapper instance to be used as a callable for bind_tools.
@@ -111,8 +116,28 @@ def execute_mcp_tool(tool_name: str, args: Dict[str, Any]) -> Any:
     return data
 
 
-MCP_TOOLS = [MCPToolWrapper(tool) for tool in TOOLS]
-MCP_TOOL_MAP = {tool.name: tool for tool in MCP_TOOLS}
+MCP_TOOLS: List[MCPToolWrapper] = []
+MCP_TOOL_MAP: Dict[str, MCPToolWrapper] = {}
+TOOL_MAP: Dict[str, MCPToolWrapper] = {}
+MCP_CALLABLES: List[Any] = []
+LLM_WITH_TOOLS = None
+LLM_CHAIN = None
+
+
+def ensure_mcp_initialized():
+    global MCP_TOOLS, MCP_TOOL_MAP, TOOL_MAP, MCP_CALLABLES, LLM_WITH_TOOLS, LLM_CHAIN
+
+    if LLM_CHAIN is not None:
+        return
+
+    MCP_TOOLS = [MCPToolWrapper(name) for name in MCP_TOOL_NAMES if name]
+    MCP_TOOL_MAP = {tool.name: tool for tool in MCP_TOOLS}
+    TOOL_MAP.clear()
+    TOOL_MAP.update(MCP_TOOL_MAP)
+    MCP_CALLABLES = [make_mcp_callable(t.name) for t in MCP_TOOLS]
+    LLM_WITH_TOOLS = LLM.bind_tools(MCP_CALLABLES, tool_choice="required") if MCP_CALLABLES else LLM.bind_tools([], tool_choice="required")
+    LLM_CHAIN = REACT_PROMPT | LLM_WITH_TOOLS
+
 
 # Create lightweight callables for LangChain bind_tools (functions with __name__)
 def make_mcp_callable(tool_name: str):
@@ -137,15 +162,13 @@ def make_mcp_callable(tool_name: str):
     return _call
 
 
-MCP_CALLABLES = [make_mcp_callable(t.name) for t in TOOLS]
-
 LLM = get_llm(temperature=0.0)
-if MCP_CALLABLES:
-    LLM_WITH_TOOLS = LLM.bind_tools(MCP_CALLABLES, tool_choice="required")
-else:
-    LLM_WITH_TOOLS = LLM.bind_tools([], tool_choice="required")
+LLM_CHAIN = None
 
-TOOL_MAP = MCP_TOOL_MAP
+
+def get_tool_map() -> Dict[str, MCPToolWrapper]:
+    ensure_mcp_initialized()
+    return TOOL_MAP
 
 store = InMemoryStore(index={"embed": embed_text, "dims": EMBEDDING_DIM})
 db_conn = get_connection(LOGGER)
@@ -153,8 +176,6 @@ db_conn = get_connection(LOGGER)
 MAX_MSG_HISTORY = 15
 MAX_MEMORY = 10
 MAX_ATTEMPTS = 7
-
-LLM_CHAIN = REACT_PROMPT | LLM_WITH_TOOLS
 
 
 async def reasoning_node(state: InvestmentAgentState):
@@ -166,6 +187,7 @@ async def reasoning_node(state: InvestmentAgentState):
     input_dict = format_state_for_prompt(state)
     input_dict["messages"] = state.messages[-MAX_MSG_HISTORY:]
 
+    ensure_mcp_initialized()
     response = LLM_CHAIN.invoke(input_dict)
 
     LOGGER.info(f"LLM RESPONSE → {str(response.content)[:200]}...")
@@ -266,7 +288,7 @@ async def execute_tool_calls(state: InvestmentAgentState):
                 elif company_name:
                     # try remote lookup via MCP tool if available
                     try:
-                        lookup_tool = TOOL_MAP.get("lookup_stock_symbol")
+                        lookup_tool = get_tool_map().get("lookup_stock_symbol")
                         if lookup_tool:
                             lookup_res = lookup_tool.invoke({"company": company_name[0]})
                             if isinstance(lookup_res, list) and lookup_res:
@@ -328,7 +350,10 @@ async def execute_tool_calls(state: InvestmentAgentState):
             result = {"error": "previous failure", "detail": prev_failure}
         else:
             try:
-                result = TOOL_MAP[name].invoke(args)
+                tool = get_tool_map().get(name)
+                if tool is None:
+                    raise KeyError(name)
+                result = tool.invoke(args)
             except Exception as e:
                 LOGGER.error(f"Tool {name} failed: {e}")
                 result = {"error": str(e)}
@@ -337,7 +362,7 @@ async def execute_tool_calls(state: InvestmentAgentState):
         if isinstance(result, dict) and (result.get("status") == "error" or result.get("error") is not None):
             if name != "get_stock_info" and "symbol" in args:
                 try:
-                    fallback = TOOL_MAP.get("get_stock_info")
+                    fallback = get_tool_map().get("get_stock_info")
                     if fallback:
                         fb_res = fallback.invoke({"symbol": args.get("symbol")})
                         tool_history.append({
@@ -358,15 +383,6 @@ async def execute_tool_calls(state: InvestmentAgentState):
                         result = fb_res
                 except Exception as e:
                     LOGGER.warning("Fallback get_stock_info failed: %s", e)
-
-        if name == "lookup_stock_symbol" and isinstance(result, list):
-            for sym in result:
-                company = sym.get("company_name")
-                ticker = sym.get("symbol")
-                if company and ticker:
-                    if company not in company_name:
-                        company_name.append(company)
-                    new_symbols[company] = ticker
 
         if name == "get_stock_info" and isinstance(result, dict):
             symbol = result.get("symbol", "")
