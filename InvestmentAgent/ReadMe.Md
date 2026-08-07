@@ -280,7 +280,8 @@ pip install -r requirements.txt
 ## 2️⃣ Run the agent (terminal mode)
 
 ```
-python agents/investment_agent.py
+# python agents/investment_agent.py  
+python terminal_run.py
 ```
 
 Example interaction:
@@ -301,7 +302,7 @@ Confidence: 68/100
 ## 3️⃣ Run application
 
 ```
-python terminal_run.py
+python investment_app.py
 ```
 
 ---
