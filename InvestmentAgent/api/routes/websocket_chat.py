@@ -1,7 +1,8 @@
 from fastapi import APIRouter, WebSocket
-from chat.chat_service import run_chat
+from agents.investment_agent_mcp import run_mcp_agent
 
 router = APIRouter()
+
 
 @router.websocket("/ws/chat")
 async def websocket_chat(websocket: WebSocket):
@@ -12,11 +13,11 @@ async def websocket_chat(websocket: WebSocket):
 
         data = await websocket.receive_json()
 
-        session_id = data["session_id"]
-        message = data["message"]
+        # session_id is accepted but MCP agent is stateless in this wrapper
+        message = data.get("message", "")
 
-        result = await run_chat(session_id, message)
+        result = await run_mcp_agent(message)
 
         await websocket.send_json({
-            "answer": result["answer"]
+            "answer": result.get("answer", "")
         })

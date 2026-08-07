@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 
-from api.schemas import ToolRequest
+from api.schemas import ToolRequest, ToolResponse
 from tools.tool_registry import TOOLS
 
 router = APIRouter(prefix="/tools", tags=["tools"])

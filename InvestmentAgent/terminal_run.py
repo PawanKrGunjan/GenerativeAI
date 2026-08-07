@@ -18,7 +18,7 @@ from utils.terminal_ui import (
     print_user_message,
 )
 
-from agents.investment_agent_AI import agent
+from agents.investment_agent import agent
 init(autoreset=True)
 
 

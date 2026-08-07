@@ -1,4 +1,4 @@
-import json,re
+import json,re, asyncio
 from typing import List, Dict, Any, Optional
 from datetime import datetime
 from zoneinfo import ZoneInfo
@@ -394,12 +394,74 @@ async def build_graph():
     return graph
 
 
-#gr = build_graph()
-#gr = asyncio.run(build_graph())
+class LocalInvestmentAgent:
+    """Wrapper to execute the compiled investment agent graph synchronously."""
+
+    def __init__(self):
+        self.graph = asyncio.run(build_graph())
+
+    def run(self, query: str) -> Dict[str, Any]:
+        state = InvestmentAgentState(
+            messages=[HumanMessage(content=query)],
+            company_name=[],
+            symbols={},
+            prices={},
+            news={},
+            memory=[],
+            tool_history=[],
+            result=None,
+            attempt_count=0,
+            current_datetime=datetime.now(IST),
+        )
+
+        try:
+            output = asyncio.run(self.graph.ainvoke(state))
+        except Exception:
+            LOGGER.exception("Agent execution failed")
+            return {
+                "answer": "Agent execution failed due to a system error.",
+                "messages": [],
+                "current_time_ist": datetime.now(IST).strftime("%Y-%m-%d %H:%M:%S IST"),
+            }
+
+        if isinstance(output, dict):
+            try:
+                final_state = InvestmentAgentState(**output)
+            except Exception:
+                LOGGER.exception("State reconstruction failed")
+                return {
+                    "answer": "Internal agent state error.",
+                    "messages": [],
+                    "current_time_ist": datetime.now(IST).strftime("%Y-%m-%d %H:%M:%S IST"),
+                }
+        else:
+            final_state = output
+
+        final_answer_msg = next(
+            (
+                m for m in reversed(final_state.messages)
+                if isinstance(m, AIMessage) and not getattr(m, "tool_calls", None)
+            ),
+            None,
+        )
+
+        answer = (
+            final_answer_msg.content
+            if final_answer_msg
+            else final_state.result or "No final answer generated."
+        )
+
+        return {
+            "answer": answer,
+            "messages": final_state.messages,
+            "current_time_ist": datetime.now(IST).strftime("%Y-%m-%d %H:%M:%S IST"),
+        }
+
+
+agent = LocalInvestmentAgent()
+
 
 if __name__ == "__main__":
-    import asyncio
-
     graph = asyncio.run(build_graph())
 
     print("💬 Investment Advisor Ready! (Type 'exit' to quit)\n")

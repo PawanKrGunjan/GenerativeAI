@@ -5,7 +5,7 @@ Formats the final user-facing response using InvestmentAgentState.
 The agent returns structured output in state.result.
 """
 
-from agents.investment_agent import InvestmentAgentState
+from agents.agent_state import InvestmentAgentState
 
 
 def _clean_reasoning(text) -> str:

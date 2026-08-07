@@ -92,7 +92,7 @@ class ToolResponse(BaseSchema):
         examples=["success", "error"]
     )
 
-    result: Optional[Dict[str, Any]] = Field(
+    result: Optional[Any] = Field(
         default=None,
         description="Result returned by the tool"
     )
@@ -170,4 +170,57 @@ class PortfolioResponse(BaseSchema):
     portfolio: List[PortfolioStock] = Field(
         ...,
         description="Portfolio holdings"
+    )
+
+
+class AgentRunRequest(BaseSchema):
+    """Request body for running the investment agent."""
+
+    message: str = Field(
+        ...,
+        description="User message to send to the investment agent",
+        examples=["Analyze Reliance stock"]
+    )
+
+    session_id: Optional[str] = Field(
+        default=None,
+        description="Optional session identifier"
+    )
+
+
+class AgentRunResponse(BaseSchema):
+    """Response returned after running the investment agent."""
+
+    answer: str = Field(
+        ...,
+        description="Agent-generated answer"
+    )
+
+    memory_summary: Optional[str] = Field(
+        default=None,
+        description="Optional memory summary from the agent"
+    )
+
+    thread_id: str = Field(
+        ...,
+        description="Internal agent thread identifier"
+    )
+
+
+class MCPToolInfo(BaseSchema):
+    """Tool metadata exposed by the MCP server."""
+
+    name: str = Field(
+        ...,
+        description="Tool name"
+    )
+
+    description: str = Field(
+        default="",
+        description="Tool description"
+    )
+
+    category: str = Field(
+        ...,
+        description="Tool category"
     )

@@ -6,7 +6,7 @@ from fastapi.responses import HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pathlib import Path
 
-from api.routes import tools, chat, portfolio
+from api.routes import tools, chat, portfolio, mcp
 from tools.market_tools import get_market_indices, get_stock_info
 
 app = FastAPI(
@@ -34,9 +34,10 @@ app.mount("/static", StaticFiles(directory="web"), name="static")
 # ─────────────────────────────────────────────
 # Register Routers
 # ─────────────────────────────────────────────
-app.include_router(chat.router)
-app.include_router(tools.router)
-app.include_router(portfolio.router)
+app.include_router(chat)
+app.include_router(tools)
+app.include_router(portfolio)
+app.include_router(mcp)
 
 # ─────────────────────────────────────────────
 # Homepage

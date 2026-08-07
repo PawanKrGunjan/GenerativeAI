@@ -4,11 +4,20 @@ Technical analysis tools.
 import yfinance as yf
 import pandas as pd
 from langchain_core.tools import tool
-from typing import Dict, Any
+from typing import Dict, Any, Sequence
 
 from utils.logger import LOGGER
 from analysis.indicators import add_sma, add_rsi
 from tools.market_tools import normalize_symbol
+
+
+def normalize_symbols(symbols: Sequence[str]) -> list[str]:
+    """Normalize one or more symbols into NSE format."""
+    if isinstance(symbols, str):
+        symbols = [symbols]
+
+    return [normalize_symbol(symbol) for symbol in symbols if isinstance(symbol, str) and symbol.strip()]
+
 
 @tool
 def compute_technical_indicators(file_path: str) -> Dict[str, Any]:
@@ -138,8 +147,10 @@ def compare_stock_returns(symbols: list, period: str = "1y") -> Dict[str, Any]:
 
     try:
 
-        #tickers = [s + ".NS" for s in symbols]
-        tickers = normalize_symbol(symbols)
+        tickers = normalize_symbols(symbols)
+        if not tickers:
+            raise ValueError("No valid symbols provided")
+
         df = yf.download(tickers, period=period, progress=False)["Close"]
 
         returns = {}
@@ -199,7 +210,10 @@ def market_breadth(symbols: list) -> Dict[str, Any]:
 
     try:
 
-        tickers = [s + ".NS" for s in symbols]
+        tickers = normalize_symbols(symbols)
+
+        if not tickers:
+            raise ValueError("No valid symbols provided")
 
         df = yf.download(tickers, period="2d", progress=False)["Close"]
 
