@@ -1,0 +1,11 @@
+mcp>=2.0,<3.0
+mftool>=3.4,<4.0
+pandas>=1.5
+yfinance>=0.2.54,<2.0
+numpy
+matplotlib
+scikit-learn
+statsmodels
+seaborn
+nselib
+mplfinance
